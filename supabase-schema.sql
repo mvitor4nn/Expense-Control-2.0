@@ -1,5 +1,5 @@
 -- =====================================================================
--- Expense Control: schema Supabase v3  (rode inteiro no SQL Editor)
+-- Expense Control: schema Supabase v2  (rode inteiro no SQL Editor)
 -- Pode rodar de novo sem quebrar (idempotente).
 -- NADA aqui foi executado contra um projeto real: rode e confira os
 -- testes de RLS ao final (secao "TESTES").
@@ -78,48 +78,26 @@ do $$ declare t text; begin
 -- A tabela "budgets" da versao antiga nao e mais usada (orcamentos vao em profiles.prefs).
 -- Se voce ja a criou, pode apagar com:  drop table if exists public.budgets;
 
--- ---------- 5) Comprovantes REMOVIDOS: fecha o Storage e limpa dados antigos ----------
--- O app nao envia mais fotos/comprovantes. Esta secao e idempotente e faz 3 coisas:
---  a) NINGUEM mais consegue enviar arquivo: apaga as politicas de INSERT/UPDATE do bucket "receipts".
---  b) Mantem SO select + delete (do proprio dono) para o app limpar, uma vez por conta, os arquivos
---     antigos de <uid>/ ao sincronizar. (Nao da para apagar de storage.objects por SQL: o Supabase
---     bloqueia; a limpeza e feita pela API de Storage, que o app ja usa.)
---  c) Remove das linhas (jsonb) qualquer vestigio de foto: photo, photoPath, photoExp.
--- Depois que todos os aparelhos sincronizarem (ou voce decidir encerrar), APAGUE O BUCKET:
---   Dashboard > Storage > receipts > ... > Delete bucket   (confira antes: veja teste (b) abaixo)
--- e entao rode a secao 5-final (comentada no fim deste arquivo) para remover as politicas restantes.
+-- ---------- 5) Storage: bucket PRIVADO "receipts", pasta <uid>/ por usuario ----------
+insert into storage.buckets(id,name,public,file_size_limit,allowed_mime_types)
+values('receipts','receipts',false,2097152,array['image/jpeg','image/png','image/webp'])
+on conflict(id) do update set public=false, file_size_limit=2097152,
+  allowed_mime_types=array['image/jpeg','image/png','image/webp'];
+
 drop policy if exists receipts_own on storage.objects;
+drop policy if exists receipts_select on storage.objects;
 drop policy if exists receipts_insert on storage.objects;
 drop policy if exists receipts_update on storage.objects;
-drop policy if exists receipts_select on storage.objects;
 drop policy if exists receipts_delete on storage.objects;
 create policy receipts_select on storage.objects for select to authenticated
   using (bucket_id='receipts' and (storage.foldername(name))[1] = (select auth.uid())::text);
+create policy receipts_insert on storage.objects for insert to authenticated
+  with check (bucket_id='receipts' and (storage.foldername(name))[1] = (select auth.uid())::text);
+create policy receipts_update on storage.objects for update to authenticated
+  using (bucket_id='receipts' and (storage.foldername(name))[1] = (select auth.uid())::text)
+  with check (bucket_id='receipts' and (storage.foldername(name))[1] = (select auth.uid())::text);
 create policy receipts_delete on storage.objects for delete to authenticated
   using (bucket_id='receipts' and (storage.foldername(name))[1] = (select auth.uid())::text);
--- bucket (se existir) fica privado e sem aceitar nada novo:
-update storage.buckets set public=false, file_size_limit=1, allowed_mime_types=array['application/x-disabled']
-  where id='receipts';
-
--- vestigios de foto nas linhas (o trigger ec_touch aceita: updated_at igual nao e "escrita antiga")
-do $$ declare t text; begin
- foreach t in array array['expenses','recurring','installments','goals','incomes'] loop
-  execute format($f$update public.%I set data = data - 'photo' - 'photoPath' - 'photoExp'
-    where data ? 'photo' or data ? 'photoPath' or data ? 'photoExp'$f$, t);
- end loop; end $$;
-
--- =====================================================================
--- EXCLUIR A PROPRIA CONTA (LGPD / exigencia das lojas)  -- idempotente
--- O app chama sb.rpc('delete_my_account') com o login da propria pessoa.
--- Apagar de auth.users dispara o ON DELETE CASCADE nas 6 tabelas (profiles,
--- expenses, recurring, installments, goals, incomes). O cascade NAO apaga o
--- Storage: por isso o app remove antes eventuais arquivos antigos de <uid>/ no bucket "receipts".
--- IMPORTANTE: a chave service_role NUNCA e usada no app. Esta funcao e
--- security definer, so apaga auth.uid() (quem esta logado) e so authenticated executa.
--- =====================================================================
-create or replace function public.delete_my_account() returns void language plpgsql security definer set search_path = public, auth as $$ begin if auth.uid() is null then raise exception 'not authenticated'; end if; delete from auth.users where id = auth.uid(); end $$;
-revoke all on function public.delete_my_account() from public, anon;
-grant execute on function public.delete_my_account() to authenticated;
 
 -- =====================================================================
 -- TESTES (rode no SQL Editor depois; todos devem dar o resultado indicado)
@@ -128,20 +106,7 @@ grant execute on function public.delete_my_account() to authenticated;
 --   select relname, relrowsecurity, relforcerowsecurity from pg_class
 --   where relnamespace='public'::regnamespace and relname in
 --   ('profiles','expenses','recurring','installments','goals','incomes');
--- b) bucket fechado (ou inexistente, depois de apagado) -> public = false e file_size_limit = 1:
+-- b) bucket privado -> public = false:
 --   select id, public, file_size_limit from storage.buckets where id='receipts';
---    Quantos arquivos antigos ainda restam (quando for 0 em todas as contas, apague o bucket):
---   select count(*) from storage.objects where bucket_id='receipts';
 -- c) Teste real com DOIS usuarios (o mais importante): entre com a conta A no app,
 --    crie um gasto; entre com a conta B em outro navegador: o gasto de A NAO pode aparecer.
--- d) Excluir conta: logado como usuario de teste, no app use Conta > Excluir minha conta.
---    Depois confira (devem dar 0 linhas / 0 arquivos):
---   select count(*) from auth.users where email='SEU-TESTE@EMAIL';
---   select count(*) from public.expenses where user_id='<uid>';
---   select count(*) from storage.objects where bucket_id='receipts' and name like '<uid>/%';
-
--- =====================================================================
--- 5-final) SO DEPOIS de apagar o bucket "receipts" no Dashboard (Storage). Descomente e rode:
--- =====================================================================
--- drop policy if exists receipts_select on storage.objects;
--- drop policy if exists receipts_delete on storage.objects;

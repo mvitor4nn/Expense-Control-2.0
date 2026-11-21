@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-HhXsLosyQO68hNrb8vnoSu//os1ZGC4y5VkUIIfUwGU=' 'sha256-s3I+BzVLzvLWkTz7NejtTaJytbFscKGbzgFAlMEWBUk=' https://cdn.jsdelivr.net https://accounts.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob:; media-src 'self' blob: data:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://www.googleapis.com https://accounts.google.com; frame-src https://accounts.google.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-IpAX/Gq4PKAtbkwaPSouEHWJGmf/+oSbqg+7G1DM4RY=' 'sha256-s3I+BzVLzvLWkTz7NejtTaJytbFscKGbzgFAlMEWBUk=' https://cdn.jsdelivr.net https://accounts.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob:; media-src 'self' blob: data:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://www.googleapis.com https://accounts.google.com; frame-src https://accounts.google.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="referrer" content="no-referrer">
 <title>Expense Control</title>
@@ -131,6 +131,13 @@ h2.sec{font-family:var(--font-display);font-weight:800;font-size:18px;margin:24p
 .btn.danger{background:color-mix(in srgb,var(--bad) 16%,var(--surface));color:var(--bad)}
 .btn[disabled]{opacity:.5}
 ::placeholder{color:var(--muted);opacity:1}
+.hq{display:flex;align-items:center;gap:8px;min-width:0}
+.hq h3,.hq label{margin:0}
+.qm{flex:0 0 auto;width:18px;height:18px;padding:0;border-radius:50%;border:1px solid var(--line);background:var(--surface2);color:var(--muted);font:700 11px/1 var(--font-display);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;-webkit-tap-highlight-color:transparent;position:relative}
+.qm::after{content:"";position:absolute;inset:-13px}
+.qm[aria-expanded="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.qm:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.qtip{margin:6px 0 4px;padding:8px 10px;border-radius:10px;background:var(--surface2);border:1px solid var(--line);color:var(--muted);font-size:12.5px;line-height:1.4;font-family:var(--font-body,inherit);font-weight:500}
 /* Planejar: seções recolhíveis e atalhos */
 .plchips{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding:2px 0 4px}
 .plchips::-webkit-scrollbar{display:none}
@@ -473,8 +480,6 @@ html.has-bg .top,html.has-bg h2.sec,html.has-bg .sub,html.has-bg .hint,html.has-
 </head>
 <body>
 <noscript><p style="padding:24px;font:16px system-ui;color:#F4F4F9;background:#07070B">Expense Control precisa de JavaScript. / needs JavaScript. / necesita JavaScript.</p></noscript>
-<div class="bg-img" id="bgImg" aria-hidden="true"></div>
-<div class="bg-dim" id="bgDim" aria-hidden="true"></div>
 
 <div class="app" id="app">
   <header class="top">
@@ -506,34 +511,34 @@ html.has-bg .top,html.has-bg h2.sec,html.has-bg .sub,html.has-bg .hint,html.has-
       <p class="sub" data-i18n="set_sub"></p>
       <div class="plchips" id="plChips" role="group" data-i18n-aria="pl_jump"><button class="chip" type="button" data-plgo="pl-inc" data-i18n="pl_g_inc"></button><button class="chip" type="button" data-plgo="pl-bud" data-i18n="pl_g_bud"></button><button class="chip" type="button" data-plgo="pl-com" data-i18n="pl_g_com"></button><button class="chip" type="button" data-plgo="pl-goal" data-i18n="pl_g_goal"></button><button class="chip" type="button" data-plgo="pl-st" data-i18n="pl_g_st"></button></div>
       <div style="height:6px"></div>
-      <details class="plg" id="pl-inc" data-pl="pl-inc" open><summary><span data-i18n="pl_g_inc"></span><svg class="pl-ch" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></summary>
-      <div class="card"><div class="field"><label for="salary" id="salLbl"></label>
+      <details class="plg" id="pl-inc" data-pl="pl-inc" open><summary><span data-i18n="pl_g_inc"></span><button class="qm" type="button" data-tip="tip_g_inc" aria-expanded="false" data-i18n-aria="qm_aria">?</button><svg class="pl-ch" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></summary>
+      <div class="card"><div class="field"><div class="hq"><label for="salary" id="salLbl"></label><button class="qm" type="button" data-tip="tip_sal" aria-expanded="false" data-i18n-aria="qm_aria">?</button></div>
         <div class="money"><span>R$</span><input class="input" id="salary" inputmode="numeric" autocomplete="off" placeholder="0,00"></div></div></div>
-      <div class="card"><div class="field"><label for="va" data-i18n="va_lbl"></label>
+      <div class="card"><div class="field"><div class="hq"><label for="va" data-i18n="va_lbl"></label><button class="qm" type="button" data-tip="tip_va" aria-expanded="false" data-i18n-aria="qm_aria">?</button></div>
         <div class="money"><span>R$</span><input class="input" id="va" inputmode="numeric" autocomplete="off" placeholder="0,00"></div></div></div>
-      <div class="card"><h3 data-i18n="limit_h"></h3>
+      <div class="card"><div class="hq"><h3 data-i18n="limit_h"></h3><button class="qm" type="button" data-tip="tip_limit" aria-expanded="false" data-i18n-aria="qm_aria">?</button></div>
         <div class="rowline"><span class="sub"><span data-i18n="limit_pre"></span> <b id="limitOut"></b> <span data-i18n="limit_post"></span></span><span class="big sv" id="limitAmt"></span></div>
         <input type="range" id="limit" min="10" max="100" step="5" data-i18n-aria="limit_aria"></div>
-      <div class="card"><h3 data-i18n="warn_h"></h3>
+      <div class="card"><div class="hq"><h3 data-i18n="warn_h"></h3><button class="qm" type="button" data-tip="tip_warn" aria-expanded="false" data-i18n-aria="qm_aria">?</button></div>
         <div class="rowline"><span class="sub"><span data-i18n="warn_pre"></span> <b id="warnOut"></b> <span data-i18n="warn_post"></span></span><span class="big sv" id="warnAmt"></span></div>
         <input type="range" id="warn" min="5" max="100" step="5" data-i18n-aria="warn_aria"></div>
-      <div class="card"><div class="rowline"><h3 data-i18n="status_h"></h3><span class="pill" id="setPill"></span></div>
+      <div class="card"><div class="rowline"><div class="hq"><h3 data-i18n="status_h"></h3><button class="qm" type="button" data-tip="tip_status" aria-expanded="false" data-i18n-aria="qm_aria">?</button></div><span class="pill" id="setPill"></span></div>
         <div id="setMeter"></div><p class="sub" id="setNote" style="margin-top:6px"></p></div>
       </details>
-      <details class="plg" id="pl-bud" data-pl="pl-bud" open><summary><span data-i18n="pl_g_bud"></span><svg class="pl-ch" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></summary>
-      <div class="card"><h3 data-i18n="bud_h"></h3><p class="sub" data-i18n="bud_sub"></p>
+      <details class="plg" id="pl-bud" data-pl="pl-bud" open><summary><span data-i18n="pl_g_bud"></span><button class="qm" type="button" data-tip="tip_g_bud" aria-expanded="false" data-i18n-aria="qm_aria">?</button><svg class="pl-ch" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></summary>
+      <div class="card"><div class="hq"><h3 data-i18n="bud_h"></h3><button class="qm" type="button" data-tip="tip_bud" aria-expanded="false" data-i18n-aria="qm_aria">?</button></div><p class="sub" data-i18n="bud_sub"></p>
         <div class="clist" id="budList" style="margin-top:10px;border:0;background:none;padding:0"></div></div>
       </details>
-      <details class="plg" id="pl-com" data-pl="pl-com" open><summary><span data-i18n="pl_g_com"></span><svg class="pl-ch" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></summary>
-      <div class="card"><div class="rowline" style="align-items:center"><h3 data-i18n="rec_h"></h3><button class="btn sm" type="button" data-recadd data-i18n="rec_add"></button></div>
+      <details class="plg" id="pl-com" data-pl="pl-com" open><summary><span data-i18n="pl_g_com"></span><button class="qm" type="button" data-tip="tip_g_com" aria-expanded="false" data-i18n-aria="qm_aria">?</button><svg class="pl-ch" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></summary>
+      <div class="card"><div class="rowline" style="align-items:center"><div class="hq"><h3 data-i18n="rec_h"></h3><button class="qm" type="button" data-tip="tip_rec" aria-expanded="false" data-i18n-aria="qm_aria">?</button></div><button class="btn sm" type="button" data-recadd data-i18n="rec_add"></button></div>
         <p class="sub" data-i18n="rec_sub"></p><div class="txl" id="recList" style="margin-top:12px"></div></div>
-      <div class="card"><h3 data-i18n="inst_h"></h3><p class="sub" data-i18n="inst_sub"></p><div id="instBox" style="margin-top:12px"></div></div>
+      <div class="card"><div class="hq"><h3 data-i18n="inst_h"></h3><button class="qm" type="button" data-tip="tip_inst" aria-expanded="false" data-i18n-aria="qm_aria">?</button></div><p class="sub" data-i18n="inst_sub"></p><div id="instBox" style="margin-top:12px"></div></div>
       </details>
-      <details class="plg" id="pl-goal" data-pl="pl-goal" open><summary><span data-i18n="pl_g_goal"></span><svg class="pl-ch" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></summary>
-      <div class="card"><div class="rowline" style="align-items:center"><h3 data-i18n="goal_h"></h3><button class="btn sm" type="button" data-goaladd data-i18n="goal_new"></button></div><p class="sub" data-i18n="goal_sub"></p><div id="goalBox" style="margin-top:12px"></div></div>
+      <details class="plg" id="pl-goal" data-pl="pl-goal" open><summary><span data-i18n="pl_g_goal"></span><button class="qm" type="button" data-tip="tip_g_goal" aria-expanded="false" data-i18n-aria="qm_aria">?</button><svg class="pl-ch" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></summary>
+      <div class="card"><div class="rowline" style="align-items:center"><div class="hq"><h3 data-i18n="goal_h"></h3><button class="qm" type="button" data-tip="tip_goal" aria-expanded="false" data-i18n-aria="qm_aria">?</button></div><button class="btn sm" type="button" data-goaladd data-i18n="goal_new"></button></div><p class="sub" data-i18n="goal_sub"></p><div id="goalBox" style="margin-top:12px"></div></div>
       </details>
-      <details class="plg" id="pl-st" data-pl="pl-st" open><summary><span data-i18n="pl_g_st"></span><svg class="pl-ch" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></summary>
-      <div class="card"><h3 data-i18n="st_h"></h3><p class="sub" data-i18n="st_sub"></p><div id="stBox" style="margin-top:12px"></div></div>
+      <details class="plg" id="pl-st" data-pl="pl-st" open><summary><span data-i18n="pl_g_st"></span><button class="qm" type="button" data-tip="tip_g_st" aria-expanded="false" data-i18n-aria="qm_aria">?</button><svg class="pl-ch" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></summary>
+      <div class="card"><div class="hq"><h3 data-i18n="st_h"></h3><button class="qm" type="button" data-tip="tip_st" aria-expanded="false" data-i18n-aria="qm_aria">?</button></div><p class="sub" data-i18n="st_sub"></p><div id="stBox" style="margin-top:12px"></div></div>
       </details>
       <p class="note" id="sampleNote"></p>
     </section>
@@ -566,7 +571,7 @@ html.has-bg .top,html.has-bg h2.sec,html.has-bg .sub,html.has-bg .hint,html.has-
   </div>
 
   <div class="gate" id="onb" role="dialog" aria-modal="true" aria-labelledby="onbT" hidden>
-    <div class="steps" id="onbSteps" aria-hidden="true"><i></i><i></i><i></i></div>
+    <div class="steps" id="onbSteps" aria-hidden="true"><i></i><i></i></div>
     <div class="gate-in" id="onbBody"></div>
     <div class="onb-foot"><button class="link" id="onbSkip" type="button" data-i18n="ob_skip"></button><button class="btn" id="onbNext" type="button"></button></div>
   </div>
@@ -590,7 +595,6 @@ html.has-bg .top,html.has-bg h2.sec,html.has-bg .sub,html.has-bg .hint,html.has-
           <div class="phero">
             <div class="logo hero-av" id="dAvBig" aria-hidden="true">$</div>
             <div class="hero-t"><div class="hero-name" id="dHello"></div><div class="hero-sub"><i class="dot" id="dDot"></i><span id="dSync"></span></div></div>
-            <button class="hero-edit" type="button" data-dopen="profile" aria-label="Editar perfil" data-i18n-aria="hero_edit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></svg></button>
           </div>
           <div class="tiles">
             <button class="tile" type="button" data-dopen="theme"><span class="ico c-pink"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a9 9 0 1 0 0 18c1.4 0 2-1 2-2 0-1.4-1.2-1.6-1.2-3 0-1 .8-1.8 1.9-1.8H17a4 4 0 0 0 4-4C21 6.5 17 3 12 3z"/><circle cx="7.5" cy="11" r="1"/><circle cx="10" cy="7.5" r="1"/><circle cx="14.5" cy="7.5" r="1"/></svg></span><span class="tile-t" data-i18n="m_theme"></span><small id="tsTheme"></small></button>
@@ -620,7 +624,6 @@ html.has-bg .top,html.has-bg h2.sec,html.has-bg .sub,html.has-bg .hint,html.has-
           </div>
           <p class="set-h" data-i18n="set_g_cust"></p>
           <div class="set-list">
-            <button class="set-row" type="button" data-dopen="profile" data-kw="foto apelido nickname avatar icone"><span class="ico c-amber"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="9" cy="10" r="2.2"/><path d="M5.5 17c.6-2 2-3 3.5-3s2.9 1 3.5 3M15 9.5h3M15 13h3"/></svg></span><span class="set-t"><span data-i18n="m_profile"></span><small id="sumProfile"></small></span><svg class="go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
             <button class="set-row" type="button" data-dopen="theme" data-kw="escuro claro dark light fundo foto aparencia"><span class="ico c-pink"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a9 9 0 1 0 0 18c1.4 0 2-1 2-2 0-1.4-1.2-1.6-1.2-3 0-1 .8-1.8 1.9-1.8H17a4 4 0 0 0 4-4C21 6.5 17 3 12 3z"/><circle cx="7.5" cy="11" r="1"/><circle cx="10" cy="7.5" r="1"/><circle cx="14.5" cy="7.5" r="1"/></svg></span><span class="set-t"><span data-i18n="m_theme"></span><small id="sumTheme"></small></span><svg class="go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
             <button class="set-row" type="button" data-dopen="song" data-kw="musica music som sound"><span class="ico c-violet"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/></svg></span><span class="set-t"><span data-i18n="m_song"></span><small id="sumSong"></small></span><svg class="go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
             <button class="set-row" type="button" data-dopen="reminder" data-kw="notificacao aviso notification recordatorio alarm"><span class="ico c-amber"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 8 3 8H3s3-1 3-8"/><path d="M10.3 21a1.9 1.9 0 0 0 3.4 0"/></svg></span><span class="set-t"><span data-i18n="m_rem"></span><small id="sumRem"></small></span><svg class="go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
@@ -636,19 +639,6 @@ html.has-bg .top,html.has-bg h2.sec,html.has-bg .sub,html.has-bg .hint,html.has-
           </div>
           <p class="sub" id="setNone" role="status" hidden data-i18n="set_none"></p>
           <p class="foot" data-foot></p>
-        </section>
-
-        <section class="d-view" id="dv-profile" hidden>
-          <div class="d-vhead"><button class="back" type="button" data-dback><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg><span></span></button></div>
-          <h2 class="sec" data-i18n="m_profile"></h2>
-          <div class="card prof">
-            <div class="logo av-prev prof-av" id="avPrev" aria-hidden="true">$</div>
-            <div class="btns prof-btns"><button class="btn" id="avPick" type="button" data-i18n="icon_pick"></button><button class="btn ghost" id="avRemove" type="button" hidden data-i18n="icon_remove"></button></div>
-            <p class="sub" data-i18n="icon_sub"></p>
-            <input type="file" id="avFile" accept="image/*" hidden>
-          </div>
-          <div class="card"><div class="rowline"><h3 data-i18n="nick_h"></h3><span class="sub" id="nickCnt">0/20</span></div><p class="sub" data-i18n="nick_sub"></p>
-            <input class="input" id="nick" maxlength="20" autocomplete="off" style="margin-top:10px" data-i18n-ph="nick_ph" aria-label="Nickname" data-i18n-aria="nick_h"></div>
         </section>
 
         <section class="d-view" id="dv-about" hidden>
@@ -679,12 +669,7 @@ html.has-bg .top,html.has-bg h2.sec,html.has-bg .sub,html.has-bg .hint,html.has-
             <button type="button" data-tmode="dark" aria-pressed="false" data-i18n="mode_dark"></button>
             <button type="button" data-tmode="light" aria-pressed="false" data-i18n="mode_light"></button>
           </div>
-          <div class="card"><p class="sub" data-i18n="th_sub"></p>
-            <div class="theme-prev" id="themePrev"></div>
-            <div id="dimWrap" hidden><div class="rowline" style="margin-top:14px"><span class="sub" data-i18n="dim"></span><b id="dimOut"></b></div>
-              <input type="range" id="dim" min="0" max="90" step="5" data-i18n-aria="dim_aria"></div>
-            <div class="btns" style="margin-top:12px"><button class="btn" id="bgPick" type="button"></button><button class="btn ghost" id="bgRemove" type="button" hidden data-i18n="photo_remove"></button></div>
-            <input type="file" id="bgFile" accept="image/*" hidden></div>
+          
         </section>
 
         <section class="d-view" id="dv-song" hidden>
@@ -777,6 +762,22 @@ var MONTHS={
   es:['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
 };
 var D={
+  qm_aria:"O que é isso?|What is this?|¿Qué es esto?",
+  tip_g_inc:"Onde você diz quanto ganha e até onde quer gastar. Todo o resto do app se baseia nisso.|Where you set how much you earn and how far you want to spend. The rest of the app builds on this.|Aquí indicas cuánto ganas y hasta dónde quieres gastar. El resto de la app se basa en esto.",
+  tip_g_bud:"Um teto de gasto para cada categoria (mercado, lazer…), para você ver onde o dinheiro está indo.|A spending cap for each category (groceries, fun…) so you can see where your money goes.|Un tope de gasto por categoría (mercado, ocio…) para ver adónde va tu dinero.",
+  tip_g_com:"Contas que se repetem todo mês e compras parceladas, lançadas sozinhas para você não esquecer.|Bills that repeat every month and installment purchases, logged automatically so you don't forget.|Cuentas que se repiten cada mes y compras en cuotas, anotadas solas para que no se te olviden.",
+  tip_g_goal:"Objetivos de economia, como uma viagem ou uma reserva de emergência.|Savings objectives, like a trip or an emergency fund.|Objetivos de ahorro, como un viaje o un fondo de emergencia.",
+  tip_g_st:"Mostra quanto espaço do aparelho os seus dados do app ocupam.|Shows how much of your device's space your app data uses.|Muestra cuánto espacio del dispositivo ocupan tus datos de la app.",
+  tip_sal:"Quanto você recebe por mês. É a base para calcular seu limite e o aviso.|What you earn per month. It's the base used to work out your limit and alert.|Lo que recibes al mes. Es la base para calcular tu límite y el aviso.",
+  tip_va:"Quanto você tem de vale alimentação/refeição. Os gastos pagos com ele são contados à parte do salário.|How much meal voucher balance you have. Spending paid with it is counted separately from your salary.|Cuánto tienes de vale de comida. Los gastos pagados con él se cuentan aparte del salario.",
+  tip_limit:"O máximo do salário que você aceita gastar no mês, em %. Ex.: 70% de R$ 5.000 = R$ 3.500.|The most of your salary you're willing to spend in a month, in %. E.g. 70% of 5,000 = 3,500.|Lo máximo del salario que aceptas gastar al mes, en %. Ej.: 70% de 5.000 = 3.500.",
+  tip_warn:"Quando seus gastos chegarem a esta % do salário, o app te manda um aviso antes de estourar o limite.|When your spending reaches this % of your salary, the app alerts you before you hit your limit.|Cuando tus gastos lleguen a este % del salario, la app te avisa antes de superar el límite.",
+  tip_status:"Resumo rápido: quanto já foi gasto neste mês em relação ao seu limite.|Quick summary: how much you've spent this month compared to your limit.|Resumen rápido: cuánto has gastado este mes frente a tu límite.",
+  tip_bud:"Defina um teto mensal por categoria. Avisamos aos 80% e quando estourar.|Set a monthly cap per category. We alert you at 80% and when you go over.|Define un tope mensual por categoría. Avisamos al 80% y al superarlo.",
+  tip_rec:"Gastos que se repetem todo mês (aluguel, assinaturas). Cadastre uma vez e o app lança sozinho.|Expenses that repeat monthly (rent, subscriptions). Add once and the app logs them for you.|Gastos que se repiten cada mes (alquiler, suscripciones). Regístralo una vez y la app lo anota.",
+  tip_inst:"Compras divididas em várias parcelas. O app lança cada parcela no mês certo.|Purchases split into several payments. The app logs each installment in the right month.|Compras divididas en varias cuotas. La app anota cada cuota en el mes correspondiente.",
+  tip_goal:"Quanto você quer juntar para um objetivo e quanto já guardou, para acompanhar o progresso.|How much you want to save for an objective and how much you've saved, to track progress.|Cuánto quieres juntar para un objetivo y cuánto llevas, para seguir el progreso.",
+  tip_st:"Espaço que os dados do app (gastos, fotos) usam neste aparelho.|Space the app data (expenses, photos) uses on this device.|Espacio que usan los datos de la app (gastos, fotos) en este dispositivo.",
   tab_home:"Início|Home|Inicio", tab_ex:"Extrato|Activity|Extracto", tab_hist:"Gráficos|Trends|Gráficos", tab_set:"Planejar|Plan|Planificar",
   tabs_aria:"Telas|Screens|Pantallas", fab_aria:"Adicionar gasto|Add expense|Añadir gasto",
   menu_aria:"Menu|Menu|Menú", close:"Fechar|Close|Cerrar", toast_close:"Fechar aviso|Close alert|Cerrar aviso",
@@ -1015,10 +1016,10 @@ var D={
   m_priv:"Política de privacidade|Privacy policy|Política de privacidad", m_priv_s:"Como seus dados são tratados|How your data is handled|Cómo se tratan tus datos",
   m_terms:"Termos de uso|Terms of use|Términos de uso", m_terms_s:"Regras para usar o app|Rules for using the app|Reglas para usar la app",
   dev_h:"Apagar todos os dados deste aparelho|Erase all data on this device|Borrar todos los datos de este dispositivo",
-  dev_sub:"Remove gastos, metas, foto de perfil, PIN e preferências guardados aqui. Não exclui conta na nuvem.|Removes expenses, goals, profile photo, PIN and preferences stored here. Does not delete a cloud account.|Elimina gastos, metas, foto de perfil, PIN y preferencias guardados aquí. No elimina la cuenta en la nube.",
+  dev_sub:"Remove gastos, metas, PIN e preferências guardados aqui. Não exclui conta na nuvem.|Removes expenses, goals, PIN and preferences stored here. Does not delete a cloud account.|Elimina gastos, metas, PIN y preferencias guardados aquí. No elimina la cuenta en la nube.",
   dev_btn:"Apagar dados do aparelho|Erase device data|Borrar datos del dispositivo",
   dev_t:"Apagar tudo deste aparelho?|Erase everything on this device?|¿Borrar todo en este dispositivo?",
-  dev_body:"Isso apaga de forma permanente os dados guardados neste aparelho (gastos, metas, foto de perfil, PIN, tema e preferências). Se você estiver conectado, sairá da conta aqui, mas a conta e os dados na nuvem continuam. Não dá para desfazer. Faça um backup antes se quiser guardar algo.|This permanently erases the data stored on this device (expenses, goals, profile photo, PIN, theme and preferences). If you are signed in, you will be signed out here, but your cloud account and data remain. This cannot be undone. Make a backup first if you want to keep anything.|Esto borra de forma permanente los datos guardados en este dispositivo (gastos, metas, foto de perfil, PIN, tema y preferencias). Si has iniciado sesión, saldrás aquí, pero la cuenta y los datos en la nube siguen. No se puede deshacer. Haz una copia antes si quieres conservar algo.",
+  dev_body:"Isso apaga de forma permanente os dados guardados neste aparelho (gastos, metas, PIN, tema e preferências). Se você estiver conectado, sairá da conta aqui, mas a conta e os dados na nuvem continuam. Não dá para desfazer. Faça um backup antes se quiser guardar algo.|This permanently erases the data stored on this device (expenses, goals, PIN, theme and preferences). If you are signed in, you will be signed out here, but your cloud account and data remain. This cannot be undone. Make a backup first if you want to keep anything.|Esto borra de forma permanente los datos guardados en este dispositivo (gastos, metas, PIN, tema y preferencias). Si has iniciado sesión, saldrás aquí, pero la cuenta y los datos en la nube siguen. No se puede deshacer. Haz una copia antes si quieres conservar algo.",
   dev_word:"APAGAR|DELETE|BORRAR",
   dev_type:"Para confirmar, digite {w}:|To confirm, type {w}:|Para confirmar, escribe {w}:",
   dev_go:"Apagar tudo|Erase everything|Borrar todo", dev_retry:"Tentar novamente|Try again|Reintentar", dev_cancel:"Cancelar|Cancel|Cancelar",
@@ -1140,7 +1141,7 @@ function seed(){
       var n=cur?t.now:t.n[0]+Math.floor(r()*(t.n[1]-t.n[0]+1));
       for(var i=0;i<n;i++){
         var day=1+Math.floor(r()*maxDay),hh=7+Math.floor(r()*15),mm=Math.floor(r()*12)*5;
-        out.push({id:'s'+(id++),cat:t.c,sub:t.s,name:t.items[Math.floor(r()*t.items.length)],addr:t.addrs[Math.floor(r()*t.addrs.length)],
+        out.push({id:'s'+(id++),cat:t.c,sub:t.s,name:t.items[Math.floor(r()*t.items.length)],
           price:Math.round((t.min+r()*(t.max-t.min))*100)/100,ts:y+'-'+pad(mo+1)+'-'+pad(day)+'T'+pad(hh)+':'+pad(mm)});
       }
     });
@@ -1159,7 +1160,7 @@ var OLDNAME={'compras do mês':['alimentacao','supermercado'],'hortifruti':['ali
   'livro na livraria':['lazer','hobbies'],'farmácia':['saude','farmacia'],'consulta médica':['saude','consultas'],'exames de rotina':['saude','exames']};
 var PH_PURGED=0; /* nº de imagens de comprovante antigas descartadas na leitura (aviso único no boot) */
 function migrate(o){
-  o.expenses=o.expenses.filter(function(e){return e&&typeof e.ts==='string'&&/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(e.ts)&&isFinite(e.price)&&+e.price>=0}).map(function(e,i){e.id=String(e.id||('m'+i));e.price=+e.price;e.name=String(e.name==null?'':e.name);if(e.photo||e.photoPath||e.photoExp)PH_PURGED++;delete e.photo;delete e.photoPath;delete e.photoExp;return e});
+  o.expenses=o.expenses.filter(function(e){return e&&typeof e.ts==='string'&&/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(e.ts)&&isFinite(e.price)&&+e.price>=0}).map(function(e,i){e.id=String(e.id||('m'+i));e.price=+e.price;e.name=String(e.name==null?'':e.name);if(e.photo||e.photoPath||e.photoExp)PH_PURGED++;delete e.photo;delete e.photoPath;delete e.photoExp;delete e.addr;return e});
   o.expenses.forEach(function(e){
     if(!SUB[e.sub]){var m=OLDNAME[String(e.name||'').toLowerCase()]||OLDDEF[e.cat]||['outros','taxas'];e.cat=m[0];e.sub=m[1]}
     else e.cat=SUB[e.sub].cat;
@@ -1171,7 +1172,7 @@ function migrate(o){
   o.limit=isFinite(o.limit)?+o.limit:70;o.warn=isFinite(o.warn)?+o.warn:60;
   o.fsubs=(Array.isArray(o.fsubs)?o.fsubs:[]).filter(function(s){return SUB[s]});
   o.lang=LANGS.indexOf(o.lang)>-1?o.lang:'pt';
-  o.nick=typeof o.nick==='string'?o.nick.slice(0,20):'';
+  delete o.nick;
   o.lastPay=PAYS.indexOf(o.lastPay)>-1?o.lastPay:'pix';
   var bd={};
   if(o.budgets&&typeof o.budgets==='object')Object.keys(o.budgets).forEach(function(k){if(CAT[k]&&isFinite(o.budgets[k])&&+o.budgets[k]>0)bd[k]=Math.round(+o.budgets[k]*100)/100});
@@ -1408,7 +1409,7 @@ function exList(){
   var list=ofMonth(VM).filter(function(e){
     if(!fOn(e.sub))return false;
     if(!q)return true;
-    return (String(e.name)+' '+(e.addr||'')+' '+cn(e.sub)+' '+cn(e.cat)+' '+payName(e.pay)).toLowerCase().indexOf(q)>-1;
+    return (String(e.name)+' '+cn(e.sub)+' '+cn(e.cat)+' '+payName(e.pay)).toLowerCase().indexOf(q)>-1;
   }).sort(function(a,b){return a.ts<b.ts?1:-1});
   if(!fActive())S.incomes.forEach(function(i){
     if(i.ts.slice(0,7)!==VM)return;
@@ -1940,58 +1941,6 @@ function applyPriv(){
 }
 $('#privBtn').addEventListener('click',function(){PRIV=!PRIV;try{localStorage.setItem(PVK,PRIV?'1':'0')}catch(e){}applyPriv()});
 
-/* ---------- tema com foto ---------- */
-var BGK='cifrao-bg-v1',BG=null;
-try{BG=JSON.parse(localStorage.getItem(BGK))}catch(e){}
-if(!BG||!BG.img)BG=null;
-function saveBg(){try{if(BG)localStorage.setItem(BGK,JSON.stringify(BG));else localStorage.removeItem(BGK);return true}catch(e){return false}}
-var bgV=null,bgVKey='';
-function bgNeed(){return bgV==null?0:Math.min(75,Math.ceil(100*(1-Math.pow(.13/Math.max(bgV,.13),1/2.2))))} /* bgV = luminância média; texto claro precisa de fundo com luminância <= ~0,13 */
-function bgMeasure(){ /* brilho médio da foto (16x16 px), só neste aparelho */
-  var k=BG.img.length+':'+BG.img.slice(-40);if(bgVKey===k)return;bgVKey=k;bgV=null;
-  var im=new Image();im.onload=function(){try{var c=document.createElement('canvas');c.width=c.height=16;var x=c.getContext('2d');x.drawImage(im,0,0,16,16);
-    var d=x.getImageData(0,0,16,16).data,t=0,f=function(v){v/=255;return v<=.03928?v/12.92:Math.pow((v+.055)/1.055,2.4)};for(var i=0;i<d.length;i+=4)t+=.2126*f(d[i])+.7152*f(d[i+1])+.0722*f(d[i+2]);bgV=t/256;applyBg()}catch(e){}};im.src=BG.img;
-}
-function applyBg(){
-  var on=!!BG,pv=$('#themePrev');
-  document.documentElement.classList.toggle('has-bg',on);
-  $('#bgImg').style.backgroundImage=on?'url("'+BG.img+'")':'none';
-  var need=on?bgNeed():0,dm=on?Math.max(need,BG.dim):0; /* foto clara: escurece o mínimo necessário p/ o texto ter contraste (WCAG AA) */
-  if(on)bgMeasure();
-  $('#bgDim').style.opacity=dm/100;
-  pv.style.backgroundImage=on?'url("'+BG.img+'")':'none';
-  pv.classList.toggle('on',on);
-  pv.textContent=on?'':L('no_photo');
-  $('#dimWrap').hidden=!on;$('#bgRemove').hidden=!on;
-  $('#bgPick').textContent=on?L('photo_change'):L('photo_pick');
-  if(on){$('#dim').min=need;$('#dim').value=dm;$('#dimOut').textContent=dm+'%'}
-}
-function shrink(file,cb){
-  var url=URL.createObjectURL(file),im=new Image();
-  im.onload=function(){
-    var m=1400,k=Math.min(1,m/Math.max(im.naturalWidth,im.naturalHeight)),c=document.createElement('canvas');
-    c.width=Math.round(im.naturalWidth*k);c.height=Math.round(im.naturalHeight*k);
-    c.getContext('2d').drawImage(im,0,0,c.width,c.height);URL.revokeObjectURL(url);
-    cb(c.toDataURL('image/jpeg',0.82));
-  };
-  im.onerror=function(){URL.revokeObjectURL(url);cb(null)};
-  im.src=url;
-}
-$('#bgPick').addEventListener('click',function(){$('#bgFile').click()});
-$('#bgFile').addEventListener('change',function(){
-  var f=this.files&&this.files[0];this.value='';
-  if(!f)return;
-  shrink(f,function(data){
-    if(!data){toast('bad',L('th_err_t'),L('th_err_m'));return}
-    var old=BG;BG={img:data,dim:old?old.dim:45};
-    if(!saveBg()){BG=old;applyBg();toast('bad',L('th_big_t'),L('th_big_m'));return}
-    applyBg();toast('info',L('th_ok_t'),L('th_ok_m'));
-  });
-});
-$('#dim').addEventListener('input',function(){if(!BG)return;BG.dim=+this.value;$('#dimOut').textContent=BG.dim+'%';$('#bgDim').style.opacity=BG.dim/100});
-$('#dim').addEventListener('change',function(){saveBg()});
-$('#bgRemove').addEventListener('click',function(){BG=null;saveBg();applyBg();toast('info',L('th_rm_t'),L('th_rm_m'))});
-
 /* ---------- música de fundo ---------- */
 var MK='cifrao-music-v1',M={on:true,vol:50,name:null};
 try{var mo=JSON.parse(localStorage.getItem(MK));if(mo&&typeof mo==='object'){M.on=mo.on!==false;M.vol=isFinite(mo.vol)?Math.max(0,Math.min(100,+mo.vol)):50;M.name=mo.name||null}}catch(e){}
@@ -2152,6 +2101,23 @@ $('#plChips').addEventListener('click',function(e){
   pg.scrollTo({top:pg.scrollTop+d.getBoundingClientRect().top-pg.getBoundingClientRect().top-6,behavior:'smooth'});
   var sm=d.querySelector('summary');if(sm)sm.focus({preventScroll:true});
 });
+/* Planejar: "?" explica cada opção (toque abre/fecha; só uma por vez) */
+document.addEventListener('click',function(e){
+  var b=e.target.closest&&e.target.closest('.qm[data-tip]');
+  var open=$$('#pageSet .qtip');
+  if(!b){if(!e.target.closest||!e.target.closest('.qtip'))open.forEach(function(t){var o=t.previousElementSibling;t.remove()});$$('#pageSet .qm[aria-expanded="true"]').forEach(function(x){x.setAttribute('aria-expanded','false')});return}
+  e.preventDefault();e.stopPropagation();
+  var was=b.getAttribute('aria-expanded')==='true';
+  open.forEach(function(t){t.remove()});
+  $$('#pageSet .qm[aria-expanded="true"]').forEach(function(x){x.setAttribute('aria-expanded','false')});
+  if(was)return;
+  var host=b.closest('summary')||b.closest('.hq'),anchor=host;
+  if(host.classList.contains('hq')&&host.parentElement.classList.contains('rowline'))anchor=host.parentElement;
+  var k=b.getAttribute('data-tip'),p=document.createElement('p');
+  p.className='qtip';p.id='qt-'+k;p.setAttribute('role','note');p.setAttribute('data-i18n',k);p.textContent=L(k);
+  anchor.insertAdjacentElement('afterend',p);
+  b.setAttribute('aria-expanded','true');b.setAttribute('aria-describedby',p.id);
+},true);
 /* Configurações: busca (ignora acentos) */
 function nrm(x){return String(x).normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase()}
 function setFilter(){
@@ -2261,7 +2227,7 @@ $('#pdfBtn').addEventListener('click',function(){
 });
 
 /* ---------- menu do $ ---------- */
-var dView=null,dStack=[],APP_V='3.2';
+var dView=null,dStack=[],APP_V='3.3';
 function dLabel(){
   var v=$('#dv-'+dView+' .back span');if(!v)return;
   var prev=dStack.length?dStack[dStack.length-1]:null;
@@ -2270,7 +2236,7 @@ function dLabel(){
 function dSums(){
   try{
     var set=function(id,t){var e=$(id);if(e)e.textContent=t};
-    var mode=L(TM==='auto'?'mode_auto':TM==='light'?'mode_light':'mode_dark')+(BG?' · '+L('th_photo'):'');
+    var mode=L(TM==='auto'?'mode_auto':TM==='light'?'mode_light':'mode_dark');
     var song=M.on?L('mus_on'):L('mus_off');
     var sec=PN?L('sec_on'):L('sec_off');
     var lg={pt:'Português',en:'English',es:'Español'}[lang]||'';
@@ -2278,7 +2244,6 @@ function dSums(){
     var email=window.ECSync&&ECSync.summary&&ECSync.summary();
     set('#tsTheme',mode);set('#tsSong',song);set('#tsSec',sec);set('#tsLang',lg);
     set('#sumTheme',mode);set('#sumSong',song+(M.name?' · '+M.name:''));set('#sumLang',lg);
-    set('#sumProfile',S.nick||L('prof_sum'));
     set('#sumData',n===0?L('data_sum_0'):n===1?L('data_sum_1'):L('data_sum_n',{n:n}));
     set('#sumAbout','v'+APP_V);set('#abVer',APP_V);
     set('#sumRem',PF.rem.on?L('rem_sub_on',{t:PF.rem.t}):L('sw_off'));
@@ -2307,42 +2272,9 @@ function dOpen(){$('#drawer').hidden=false;$('#setQ').value='';setFilter();dShow
 function dClose(){$('#drawer').hidden=true}
 $('#logoBtn').addEventListener('click',dOpen);
 
-/* ---------- foto do ícone e apelido ---------- */
-var AVK='cifrao-avatar-v1',AV=null;
-try{AV=localStorage.getItem(AVK)||null}catch(e){}
-function saveAv(){try{if(AV)localStorage.setItem(AVK,AV);else localStorage.removeItem(AVK);return true}catch(e){return false}}
-function applyAvatar(){
-  ['#logoBtn','#dAvBig','#avPrev'].forEach(function(s){
-    var el=$(s);el.textContent='';
-    if(AV){var im=document.createElement('img');im.alt='';im.src=AV;el.appendChild(im)}else el.textContent='$';
-  });
-  $('#avRemove').hidden=!AV;
-}
-function cropSquare(file,size,cb){
-  var url=URL.createObjectURL(file),im=new Image();
-  im.onload=function(){
-    var s=Math.min(im.naturalWidth,im.naturalHeight),c=document.createElement('canvas');c.width=c.height=size;
-    c.getContext('2d').drawImage(im,(im.naturalWidth-s)/2,(im.naturalHeight-s)/2,s,s,0,0,size,size);
-    URL.revokeObjectURL(url);cb(c.toDataURL('image/jpeg',0.86));
-  };
-  im.onerror=function(){URL.revokeObjectURL(url);cb(null)};
-  im.src=url;
-}
-$('#avPick').addEventListener('click',function(){$('#avFile').click()});
-$('#avFile').addEventListener('change',function(){
-  var f=this.files&&this.files[0];this.value='';
-  if(!f)return;
-  cropSquare(f,256,function(data){
-    if(!data){toast('bad',L('icon_err'),L('th_err_m'));return}
-    var old=AV;AV=data;
-    if(!saveAv()){AV=old;toast('bad',L('th_big_t'),L('th_big_m'));return}
-    applyAvatar();gSchedule();
-  });
-});
-$('#avRemove').addEventListener('click',function(){AV=null;saveAv();applyAvatar();gSchedule()});
+/* ---------- cumprimento ---------- */
 function greet(){var h=new Date().getHours();return L(h<12?'greet_m':h<18?'greet_a':'greet_n')}
-function renderHello(){['#hello','#dHello'].forEach(function(s){$(s).textContent=greet()+(S.nick?', '+S.nick:'')});var c=$('#nickCnt');if(c)c.textContent=(S.nick||'').length+'/20'}
-$('#nick').addEventListener('input',function(){S.nick=this.value.trim().slice(0,20);save();renderHello();dSums()});
+function renderHello(){['#hello','#dHello'].forEach(function(s){var e=$(s);if(e)e.textContent=greet()})}
 
 /* ---------- idioma ---------- */
 function renderLangBtns(){
@@ -2359,7 +2291,7 @@ function applyLang(){
   var rb=$('#resetBtn');if(rb.dataset.armed){clearTimeout(rt);delete rb.dataset.armed;rb.classList.remove('armed')}
   setMoney($('#salary'),S.salary);setMoney($('#va'),S.va);
   $('#salLbl').textContent=L('salary_lbl',{m:monthName(CUR).slice(0,3)});
-  refresh();syncMus();applyBg();renderHello();renderLangBtns();renderGoogle();applyMode();applyPriv();if(typeof renderSec==='function')renderSec();renderRem();dSums();dLabel();
+  refresh();syncMus();renderHello();renderLangBtns();renderGoogle();applyMode();applyPriv();if(typeof renderSec==='function')renderSec();renderRem();dSums();dLabel();
   if(!$('#sheet').hidden)closeSheet();
 }
 function setLang(l){setLangVar(l);S.lang=lang;save();applyLang()}
@@ -2420,7 +2352,6 @@ function gImportFrom(file){
       (o[k]||[]).forEach(function(x){if(have[String(x.id)]||(k==='expenses'&&p.state.sample&&seed(x)))return;S[k].push(x);add++});
     });
     if(!Object.keys(S.budgets||{}).length&&Object.keys(o.budgets||{}).length)S.budgets=o.budgets;
-    if(!AV&&typeof p.avatar==='string'&&p.avatar.indexOf('data:image/')===0){AV=p.avatar;saveAv();applyAvatar()}
     S=migrate(S);return add;
   });
 }
@@ -2610,35 +2541,33 @@ $('#secBody').addEventListener('click',function(ev){
   else if(a==='bio'){if(PN.cred){PN.cred=null;savePN();renderSec()}else bioEnable(renderSec)}
 });
 
-/* onboarding: nome, salário e limite (só no primeiro uso, enquanto o app mostra dados de exemplo) */
-var onbStep=0,onbData={nick:'',salary:0,limit:70};
+/* onboarding: salário e limite (só no primeiro uso, enquanto o app mostra dados de exemplo) */
+var onbStep=0,onbData={salary:0,limit:70};
 function onbDone(applyData){
   try{localStorage.setItem(OK,'1')}catch(e){}
   if(applyData){
-    S.nick=onbData.nick.trim().slice(0,20);S.salary=onbData.salary;S.limit=onbData.limit;S.warn=Math.min(S.warn,Math.max(5,S.limit-10));
+    S.salary=onbData.salary;S.limit=onbData.limit;S.warn=Math.min(S.warn,Math.max(5,S.limit-10));
     S.expenses=[];S.sample=false;S.alerts={};S.carry={sal:0,va:0};
-    $('#nick').value=S.nick;save();
+    save();
   }
   $('#onb').hidden=true;applyLang();
 }
 function onbRender(){
-  var t=['ob1','ob2','ob3'][onbStep],h='<h1 id="onbT">'+L(t+'_t')+'</h1><p class="sub">'+L(t+'_s')+'</p><div style="height:20px"></div>';
-  if(onbStep===0)h+='<input class="input" id="obNick" maxlength="20" autocomplete="given-name" aria-label="'+esc(L('ob1_t'))+'" value="'+esc(onbData.nick)+'">';
-  else if(onbStep===1)h+='<div class="money xl"><span>R$</span><input class="input" id="obSal" inputmode="numeric" autocomplete="off" placeholder="0,00" aria-label="'+esc(L('ob2_t'))+'"></div>';
+  var t=['ob2','ob3'][onbStep],h='<h1 id="onbT">'+L(t+'_t')+'</h1><p class="sub">'+L(t+'_s')+'</p><div style="height:20px"></div>';
+  if(onbStep===0)h+='<div class="money xl"><span>R$</span><input class="input" id="obSal" inputmode="numeric" autocomplete="off" placeholder="0,00" aria-label="'+esc(L('ob2_t'))+'"></div>';
   else{
     h+='<div class="chips" id="obLim" style="justify-content:center">'+[50,60,70,80].map(function(v){return '<button class="chip" type="button" data-v="'+v+'" aria-pressed="'+(onbData.limit===v)+'">'+v+'%</button>'}).join('')+'</div>'+
       '<p class="note" style="text-align:center">'+brl(onbData.salary*onbData.limit/100)+' · '+L('ob_clean')+'</p>';
   }
   $('#onbBody').innerHTML=h;
-  $('#onbNext').textContent=L(onbStep===2?'ob_done':'ob_next');
+  $('#onbNext').textContent=L(onbStep===1?'ob_done':'ob_next');
   [].forEach.call($('#onbSteps').children,function(d,i){d.className=i<=onbStep?'on':''});
-  var f=$('#obNick')||$('#obSal');
+  var f=$('#obSal');
   if($('#obSal')){setMoney($('#obSal'),onbData.salary);$('#obSal').addEventListener('input',function(){onbData.salary=maskMoney(this)})}
-  if($('#obNick'))$('#obNick').addEventListener('input',function(){onbData.nick=this.value});
   if($('#obLim'))$('#obLim').addEventListener('click',function(e){var b=e.target.closest('[data-v]');if(!b)return;onbData.limit=+b.dataset.v;onbRender()});
   if(f)setTimeout(function(){try{f.focus({preventScroll:true})}catch(e){}},50);
 }
-$('#onbNext').addEventListener('click',function(){if(onbStep<2){onbStep++;onbRender()}else onbDone(true)});
+$('#onbNext').addEventListener('click',function(){if(onbStep<1){onbStep++;onbRender()}else onbDone(true)});
 $('#onbSkip').addEventListener('click',function(){onbDone(false)});
 function gatesInit(){
   applyLang();
@@ -2860,17 +2789,16 @@ window.ECBridge={
   applyPrefs:function(p){
     if(!p||typeof p!=='object')return;
     ['salary','va','limit','warn'].forEach(function(k){if(typeof p[k]==='number'&&isFinite(p[k]))S[k]=p[k]});
-    if(typeof p.nick==='string')S.nick=p.nick.slice(0,20);
     if(p.budgets&&typeof p.budgets==='object')S.budgets=p.budgets;
   },
-  afterMerge:function(prefs){if(prefs){$('#nick').value=S.nick;setMoney($('#salary'),S.salary);setMoney($('#va'),S.va);renderHello()}refresh();checkAlerts()},
+  afterMerge:function(prefs){if(prefs){setMoney($('#salary'),S.salary);setMoney($('#va'),S.va);renderHello()}refresh();checkAlerts()},
   refresh:function(){refresh()},renderSt:function(){renderSt()},renderAccount:function(){renderGoogle()},
   toast:function(k,t,m){toast(k,t,m)},strongConfirm:strongConfirm,
   reset:function(){ /* troca de conta: apaga dados locais da conta anterior (aparelho fica limpo) */
-    S=migrate({expenses:[],salary:0,va:0,limit:70,warn:60,lang:lang});AV=null;saveAv();
-    try{localStorage.removeItem(GK);localStorage.removeItem(BGK)}catch(e){}
+    S=migrate({expenses:[],salary:0,va:0,limit:70,warn:60,lang:lang});
+    try{localStorage.removeItem(GK)}catch(e){}
     G={email:'',last:0};try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}
-    drill=null;VM=CUR;$('#nick').value='';applyAvatar();rollover();applyLang();
+    drill=null;VM=CUR;rollover();applyLang();
   }
 };
 
@@ -2878,9 +2806,10 @@ window.ECBridge={
 applyMode();
 if(PN){$('#lock').hidden=false}
 function boot(){
-  $('#nick').value=S.nick;
+  /* privacidade: apaga fotos de perfil/fundo guardadas por versões anteriores */
+  try{localStorage.removeItem('cifrao-avatar-v1');localStorage.removeItem('cifrao-bg-v1')}catch(e){}
   genRecurring();genInst();rollover();
-  applyAvatar();applyLang();setIdx(0);checkAlerts();
+  applyLang();setIdx(0);checkAlerts();
   gatesInit();
   gAuto();
   if(PH_PURGED>0){var pn=PH_PURGED;PH_PURGED=0;save();toast('info',L('ph_gone_t'),L('ph_gone_m',{n:pn}))}
