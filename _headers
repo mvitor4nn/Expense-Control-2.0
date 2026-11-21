@@ -1,0 +1,12 @@
+# Gerado por tools/build-csp.py (não edite à mão). Netlify e Cloudflare Pages leem este arquivo.
+/*
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'sha256-7INXrEiOXJAniBcAbqYAlqWfxAoXultSE4HNQZf53zs=' 'sha256-s3I+BzVLzvLWkTz7NejtTaJytbFscKGbzgFAlMEWBUk=' 'sha256-EEAnm1xzUBy2tKd1WpUf9ae3sd+n4esy7wrHY+t5cY8=' https://cdn.jsdelivr.net https://accounts.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob:; media-src 'self' blob: data:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://www.googleapis.com https://accounts.google.com; frame-src https://accounts.google.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: no-referrer
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()
+  Strict-Transport-Security: max-age=63072000; includeSubDomains
+  Cross-Origin-Opener-Policy: same-origin-allow-popups
+  X-Frame-Options: DENY
+
+/sw.js
+  Cache-Control: no-cache

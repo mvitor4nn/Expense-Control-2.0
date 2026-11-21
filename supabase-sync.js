@@ -1,61 +1,74 @@
-/* Expense Control - sincronização Supabase v2 (login + banco + fotos).
+/* Expense Control - sincronização Supabase v3 (login + banco). Sem fotos nem comprovantes.
    - Só a anon key PÚBLICA vai em CFG.key. NUNCA coloque a service_role aqui.
    - Sem URL/KEY configuradas o app continua 100% local (nada é enviado).
    - Conflitos: por item, vence o updated_at (hora da edição) mais novo.
-   - Exclusões viajam como "tombstone" (deleted=true) e removem a foto do Storage.
+   - Exclusões viajam como "tombstone" (deleted=true).
+   - Comprovantes foram REMOVIDOS do app: o código só apaga, uma vez por conta, arquivos antigos do bucket "receipts".
    - Sem internet: as mudanças ficam numa fila salva no aparelho e são reenviadas sozinhas. */
 (function(){
 'use strict';
 var CFG={url:'',key:''}; /* <- preencha: Project URL e anon/publishable key (Settings > API) */
 var LIB=['vendor/supabase.js','https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js'];
 var T={expenses:'expenses',recurring:'recurring',inst:'installments',goals:'goals',incomes:'incomes'};
-var BUCKET='receipts',TTL=2592000,RENEW=864000000,RM_DELAY=120000,KM='ec-sync-v1',PK=['salary','va','limit','warn','nick','budgets'];
+var BUCKET='receipts' /* só para LIMPEZA de arquivos antigos; nada é enviado */,KM='ec-sync-v1',PK=['salary','va','limit','warn','nick','budgets'];
 var TX={
-pt:{t:'Conta e nuvem',sub:'Entre para sincronizar seus gastos e comprovantes entre aparelhos.',g:'Continuar com Google',m:'Receber código por e-mail',em:'seu@email.com',code:'Código do e-mail',ver:'Entrar com o código',out:'Sair',now:'Sincronizar agora',
+pt:{t:'Conta e nuvem',sub:'Entre para sincronizar seus gastos entre aparelhos.',g:'Continuar com Google',m:'Receber código por e-mail',em:'seu@email.com',code:'Código do e-mail',ver:'Entrar com o código',out:'Sair',now:'Sincronizar agora',
  ok:'Sincronizado',sent:'Enviamos um código para seu e-mail. Digite-o abaixo (o link do e-mail também funciona neste navegador).',err:'Falha ao sincronizar. Nova tentativa automática em breve.',off:'Nuvem não configurada neste app.',
- offline:'Sem internet. As alterações ficam salvas e serão enviadas quando a conexão voltar.',pend:'{n} alteração(ões) aguardando envio',syncing:'Sincronizando…',photos:'Enviando fotos ({i}/{n})…',
+ offline:'Sem internet. As alterações ficam salvas e serão enviadas quando a conexão voltar.',pend:'{n} alteração(ões) aguardando envio',syncing:'Sincronizando…',
  bad_email:'Digite um e-mail válido.',bad_code:'Digite o código recebido.',wait:'Aguarde {s}s para pedir outro código.',loading:'Carregando login…',nolib:'Não consegui carregar o login. Conecte-se à internet e tente de novo.',
  swc:'Este aparelho tem dados de OUTRA conta. Para proteger sua privacidade, vamos apagar os dados locais antes de entrar com esta conta. Os dados da outra conta continuam salvos na nuvem dela. Continuar?',
  outp:'Ainda há {n} alteração(ões) não enviadas e não foi possível enviá-las agora. Sair mesmo assim?',conf_t:'Atualizado de outro aparelho',conf:'{n} item(ns) tinham uma versão mais nova em outro aparelho.',
- photo_big:'Alguma foto é grande demais e ficou só neste aparelho.',as:'Conectado como'},
-en:{t:'Account & cloud',sub:'Sign in to sync your spending and receipts across devices.',g:'Continue with Google',m:'Email me a code',em:'you@email.com',code:'Email code',ver:'Sign in with code',out:'Sign out',now:'Sync now',
+ as:'Conectado como',zone:'Zona de risco',del_btn:'Excluir minha conta',del_sub:'Apaga para sempre sua conta e os dados na nuvem. Não dá para desfazer.',
+ del_t:'Excluir conta para sempre?',del_body:'Vamos apagar da nuvem sua conta, seus gastos, recorrentes, parcelas, metas, rendas, preferências e quaisquer arquivos antigos. Isso é permanente e não pode ser desfeito. Você precisa estar com internet.',
+ del_word:'APAGAR',del_type:'Para confirmar, digite {w} ou o seu e-mail:',del_go:'Excluir para sempre',del_retry:'Tentar novamente',del_cancel:'Cancelar',
+ del_files:'Apagando arquivos antigos…',del_acc:'Excluindo a conta…',del_err:'Não foi possível excluir a conta. Nada foi apagado neste aparelho. Verifique a conexão e tente de novo.',
+ del_offline:'Sem internet. Conecte-se para excluir a conta; nada foi apagado.',del_nosess:'Você não está conectado.',
+ del_local:'Sua conta foi excluída da nuvem. Apagar também os dados deste aparelho? (OK = apagar; Cancelar = manter aqui)',del_done_t:'Conta excluída',del_done:'Sua conta e os dados na nuvem foram apagados.'},
+en:{t:'Account & cloud',sub:'Sign in to sync your spending across devices.',g:'Continue with Google',m:'Email me a code',em:'you@email.com',code:'Email code',ver:'Sign in with code',out:'Sign out',now:'Sync now',
  ok:'Synced',sent:'We emailed you a code. Type it below (the email link also works in this browser).',err:'Sync failed. It will retry automatically soon.',off:'Cloud is not configured in this app.',
- offline:'No internet. Changes are saved and will be sent when the connection returns.',pend:'{n} change(s) waiting to upload',syncing:'Syncing…',photos:'Uploading photos ({i}/{n})…',
+ offline:'No internet. Changes are saved and will be sent when the connection returns.',pend:'{n} change(s) waiting to upload',syncing:'Syncing…',
  bad_email:'Enter a valid email.',bad_code:'Enter the code you received.',wait:'Wait {s}s before asking for another code.',loading:'Loading sign-in…',nolib:"Couldn't load sign-in. Connect to the internet and try again.",
  swc:'This device has data from a DIFFERENT account. To protect your privacy, local data will be erased before signing in with this account. The other account\'s data stays safe in its cloud. Continue?',
  outp:'{n} change(s) are not uploaded yet and could not be sent now. Sign out anyway?',conf_t:'Updated from another device',conf:'{n} item(s) had a newer version on another device.',
- photo_big:'A photo is too large and stayed on this device only.',as:'Signed in as'},
-es:{t:'Cuenta y nube',sub:'Entra para sincronizar tus gastos y comprobantes entre dispositivos.',g:'Continuar con Google',m:'Recibir código por correo',em:'tu@correo.com',code:'Código del correo',ver:'Entrar con el código',out:'Salir',now:'Sincronizar ahora',
+ as:'Signed in as',zone:'Danger zone',del_btn:'Delete my account',del_sub:'Permanently deletes your account and your cloud data. This cannot be undone.',
+ del_t:'Delete account forever?',del_body:'We will erase from the cloud your account, expenses, recurring items, installments, goals, income, preferences and any old files. This is permanent and cannot be undone. You need to be online.',
+ del_word:'DELETE',del_type:'To confirm, type {w} or your email:',del_go:'Delete forever',del_retry:'Try again',del_cancel:'Cancel',
+ del_files:'Deleting old files…',del_acc:'Deleting the account…',del_err:"Couldn't delete the account. Nothing was erased on this device. Check your connection and try again.",
+ del_offline:'No internet. Connect to delete the account; nothing was erased.',del_nosess:'You are not signed in.',
+ del_local:'Your cloud account was deleted. Also erase the data on this device? (OK = erase; Cancel = keep here)',del_done_t:'Account deleted',del_done:'Your account and cloud data were erased.'},
+es:{t:'Cuenta y nube',sub:'Entra para sincronizar tus gastos entre dispositivos.',g:'Continuar con Google',m:'Recibir código por correo',em:'tu@correo.com',code:'Código del correo',ver:'Entrar con el código',out:'Salir',now:'Sincronizar ahora',
  ok:'Sincronizado',sent:'Te enviamos un código por correo. Escríbelo abajo (el enlace del correo también funciona en este navegador).',err:'Error al sincronizar. Se reintentará automáticamente.',off:'La nube no está configurada en esta app.',
- offline:'Sin internet. Los cambios quedan guardados y se enviarán cuando vuelva la conexión.',pend:'{n} cambio(s) esperando envío',syncing:'Sincronizando…',photos:'Subiendo fotos ({i}/{n})…',
+ offline:'Sin internet. Los cambios quedan guardados y se enviarán cuando vuelva la conexión.',pend:'{n} cambio(s) esperando envío',syncing:'Sincronizando…',
  bad_email:'Escribe un correo válido.',bad_code:'Escribe el código recibido.',wait:'Espera {s}s para pedir otro código.',loading:'Cargando inicio de sesión…',nolib:'No pude cargar el inicio de sesión. Conéctate a internet e inténtalo de nuevo.',
  swc:'Este dispositivo tiene datos de OTRA cuenta. Para proteger tu privacidad, borraremos los datos locales antes de entrar con esta cuenta. Los datos de la otra cuenta siguen guardados en su nube. ¿Continuar?',
  outp:'Aún hay {n} cambio(s) sin enviar y no se pudieron enviar ahora. ¿Salir de todos modos?',conf_t:'Actualizado desde otro dispositivo',conf:'{n} elemento(s) tenían una versión más nueva en otro dispositivo.',
- photo_big:'Una foto es demasiado grande y quedó solo en este dispositivo.',as:'Conectado como'}};
+ as:'Conectado como',zone:'Zona de riesgo',del_btn:'Eliminar mi cuenta',del_sub:'Borra para siempre tu cuenta y los datos en la nube. No se puede deshacer.',
+ del_t:'¿Eliminar la cuenta para siempre?',del_body:'Borraremos de la nube tu cuenta, gastos, recurrentes, cuotas, metas, ingresos, preferencias y cualquier archivo antiguo. Es permanente y no se puede deshacer. Necesitas conexión a internet.',
+ del_word:'BORRAR',del_type:'Para confirmar, escribe {w} o tu correo:',del_go:'Eliminar para siempre',del_retry:'Reintentar',del_cancel:'Cancelar',
+ del_files:'Borrando archivos antiguos…',del_acc:'Eliminando la cuenta…',del_err:'No se pudo eliminar la cuenta. No se borró nada en este dispositivo. Revisa la conexión e inténtalo de nuevo.',
+ del_offline:'Sin internet. Conéctate para eliminar la cuenta; no se borró nada.',del_nosess:'No has iniciado sesión.',
+ del_local:'Tu cuenta en la nube fue eliminada. ¿Borrar también los datos de este dispositivo? (OK = borrar; Cancelar = mantener aquí)',del_done_t:'Cuenta eliminada',del_done:'Tu cuenta y los datos en la nube fueron borrados.'}};
 var B=function(){return window.ECBridge};
 function tx(k,v){var l=(B()&&B().lang()||'pt').slice(0,2),s=(TX[l]||TX.pt)[k]||TX.pt[k]||k;if(v)for(var x in v)s=s.split('{'+x+'}').join(v[x]);return s}
 function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
 function configured(){return !!(CFG.url&&CFG.key)}
 
-/* ---------- estado persistido (meta por item, exclusões, fila de remoção de fotos) ---------- */
-function blank(){return {v:1,owner:null,synced:false,cur:{},meta:{},tomb:{},rm:[],prefs:null,last:0}}
+/* ---------- estado persistido (meta por item, exclusões, marca da limpeza legada) ---------- */
+function blank(){return {v:1,owner:null,synced:false,legacy:false,cur:{},meta:{},tomb:{},prefs:null,last:0}}
 var M=blank();
-try{var _r=JSON.parse(localStorage.getItem(KM));if(_r&&_r.v===1)M=Object.assign(blank(),_r)}catch(e){}
+try{var _r=JSON.parse(localStorage.getItem(KM));if(_r&&_r.v===1){M=Object.assign(blank(),_r);delete M.rm}}catch(e){}
 function saveM(){try{localStorage.setItem(KM,JSON.stringify(M))}catch(e){}}
 function mt(k){return M.meta[k]||(M.meta[k]={})}
 function tb(k){return M.tomb[k]||(M.tomb[k]={})}
 function stable(o){if(o===null||typeof o!=='object')return JSON.stringify(o);if(Array.isArray(o))return '['+o.map(stable).join(',')+']';
   return '{'+Object.keys(o).sort().filter(function(k){return o[k]!==undefined}).map(function(k){return JSON.stringify(k)+':'+stable(o[k])}).join(',')+'}'}
 function h32(s){var h=5381;for(var i=0;i<s.length;i++)h=((h<<5)+h+s.charCodeAt(i))|0;return (h>>>0).toString(36)+'.'+s.length.toString(36)}
-/* a URL assinada e a validade NÃO entram no hash nem vão para o banco: renovar URL não conta como edição */
-function core(x){var c={};Object.keys(x).forEach(function(k){if(k!=='photo'&&k!=='photoExp')c[k]=x[k]});return c}
-function hashItem(x){var c=core(x);if(typeof x.photo==='string'&&x.photo.indexOf('data:')===0)c.__ph=x.photo.length+':'+x.photo.slice(-24);return h32(stable(c))}
+/* campos de foto/comprovante nunca entram no hash nem vão para o banco (recurso removido) */
+var DROP={photo:1,photoExp:1,photoPath:1};
+function core(x){var c={};Object.keys(x).forEach(function(k){if(!DROP[k])c[k]=x[k]});return c}
+function hashItem(x){return h32(stable(core(x)))}
 function getPrefs(S){var o={};PK.forEach(function(k){o[k]=S[k]});return o}
 function iso(ms){return new Date(ms).toISOString()}
-
-/* ---------- fila de remoção de fotos (adiada p/ dar tempo do "Desfazer") ---------- */
-function queueRm(p){if(!p)return;if(!M.rm.some(function(r){return r.path===p}))M.rm.push({path:p,at:Date.now()+RM_DELAY})}
-function unRm(p){if(!p)return;M.rm=M.rm.filter(function(r){return r.path!==p})}
 
 /* ---------- detecta o que mudou localmente desde a última sincronização ---------- */
 function skip(tk,x){return tk==='expenses'&&B().isSeed(x)}
@@ -65,15 +78,14 @@ function diff(){
     var arr=S[tk]||[],m=mt(tk),t=tb(tk),seen={};
     arr.forEach(function(x){
       if(!x||x.id==null||skip(tk,x))return;
-      var id=String(x.id),h=hashItem(x),p=x.photoPath||'',c=m[id];seen[id]=1;
+      var id=String(x.id),h=hashItem(x),c=m[id];seen[id]=1;
       if(t[id])delete t[id]; /* reapareceu (Desfazer): cancela a exclusão */
-      if(!c)m[id]={h:h,u:now,d:1,p:p};
-      else if(c.h!==h){if(c.p&&c.p!==p)queueRm(c.p);c.h=h;c.u=now;c.d=1;c.p=p}
-      if(p)unRm(p);
+      if(!c)m[id]={h:h,u:now,d:1};
+      else if(c.h!==h){c.h=h;c.u=now;c.d=1}
     });
     Object.keys(m).forEach(function(id){
       if(seen[id])return;
-      t[id]={u:now,p:m[id].p||''};if(m[id].p)queueRm(m[id].p);delete m[id];
+      t[id]={u:now};delete m[id];
     });
   }
   if(M.prefs){var ph=h32(stable(getPrefs(S)));if(M.prefs.h!==ph){M.prefs.h=ph;M.prefs.u=now;M.prefs.d=1}}
@@ -82,50 +94,19 @@ function diff(){
 function pending(){diff();var n=0;for(var tk in T){var m=mt(tk);Object.keys(m).forEach(function(i){if(m[i].d)n++});n+=Object.keys(tb(tk)).length}
   if(M.prefs&&M.prefs.d)n++;return n}
 
-/* ---------- fotos ---------- */
-function b2b(d,mime){var b=atob(d),u=new Uint8Array(b.length);for(var i=0;i<b.length;i++)u[i]=b.charCodeAt(i);return new Blob([u],{type:mime})}
-async function upPhoto(x){
-  var i=x.photo.indexOf(','),head=x.photo.slice(0,i),mm=/^data:image\/(jpeg|png|webp);base64$/.exec(head);
-  if(!mm)throw new Error('foto inválida');
-  var blob=b2b(x.photo.slice(i+1),'image/'+mm[1]);if(blob.size>2097152){var e=new Error('foto grande');e.big=1;throw e}
-  var ext=mm[1]==='jpeg'?'jpg':mm[1],path=user.id+'/'+String(x.id).replace(/[^A-Za-z0-9_-]/g,'_')+'.'+ext;
-  var r=await sb.storage.from(BUCKET).upload(path,blob,{upsert:true,contentType:'image/'+mm[1],cacheControl:'3600'});if(r.error)throw r.error;
-  var s=await sb.storage.from(BUCKET).createSignedUrl(path,TTL);if(s.error)throw s.error;
-  if(x.photoPath&&x.photoPath!==path)queueRm(x.photoPath);
-  x.photoPath=path;x.photo=s.data.signedUrl;x.photoExp=Date.now()+TTL*1000; /* local guarda só a URL */
-  var m=mt('expenses')[String(x.id)];if(m){m.h=hashItem(x);m.p=path;m.d=1} /* não altera u: subir foto não é edição */
-}
-async function renewPhotos(){
-  var S=B().S(),now=Date.now(),need=[];
-  (S.expenses||[]).forEach(function(x){
-    if(!x.photoPath||x.photoPath.indexOf(user.id+'/')!==0)return;
-    if(typeof x.photo==='string'&&x.photo.indexOf('data:')===0)return;
-    if(!x.photo||!x.photoExp||x.photoExp-now<RENEW)need.push(x);
-  });
-  if(!need.length)return;
-  for(var o=0;o<need.length;o+=100){
-    var part=need.slice(o,o+100),r=await sb.storage.from(BUCKET).createSignedUrls(part.map(function(x){return x.photoPath}),TTL);
-    if(r.error)throw r.error;
-    var by={};(r.data||[]).forEach(function(d){if(d&&d.path)by[d.path]=d});
-    part.forEach(function(x){var d=by[x.photoPath];
-      if(d&&d.signedUrl&&!d.error){x.photo=d.signedUrl;x.photoExp=now+TTL*1000}
-      else x.photoExp=now+3600000; /* arquivo ausente: tenta de novo em 1h, sem insistir a cada ciclo */});
-  }
-  B().persist();B().refresh();
-}
-async function flushRm(){
-  var now=Date.now(),pre=user.id+'/',due=M.rm.filter(function(r){return r.at<=now&&r.path.indexOf(pre)===0}).map(function(r){return r.path});
-  M.rm=M.rm.filter(function(r){return r.path.indexOf(pre)===0});
-  if(due.length){var r=await sb.storage.from(BUCKET).remove(due);if(r.error)throw r.error;M.rm=M.rm.filter(function(x){return due.indexOf(x.path)<0})}
-  clearTimeout(rmT);if(M.rm.length){var nx=Math.max(1000,Math.min.apply(null,M.rm.map(function(r){return r.at}))-Date.now()+1000);rmT=setTimeout(function(){run(false)},nx)}
+/* ---------- limpeza legada: apaga, uma vez por conta, arquivos antigos do bucket "receipts" ---------- */
+function noBucket(e){return !!e&&/not\s*found|does not exist|no such bucket/i.test(String(e.message||e.error||e))}
+async function purgeLegacy(){
+  if(M.legacy||!user)return;
+  try{await removeAllFiles(user.id)}catch(e){if(!noBucket(e))throw e}
+  M.legacy=true;saveM();
 }
 
 /* ---------- baixar e mesclar (por item, vence o updated_at mais novo) ---------- */
 function sane(data,id){
   var x;try{x=JSON.parse(JSON.stringify(data||{}))}catch(e){x={}}
   if(typeof x!=='object'||Array.isArray(x))x={};
-  x.id=String(id);delete x.photo;delete x.photoExp; /* a URL é gerada de novo a partir do photoPath */
-  if(x.photoPath!==undefined&&!(typeof x.photoPath==='string'&&x.photoPath.indexOf(user.id+'/')===0&&/^[0-9a-f-]{36}\/[A-Za-z0-9_.-]+$/.test(x.photoPath)))delete x.photoPath;
+  x.id=String(id);delete x.photo;delete x.photoExp;delete x.photoPath; /* dados antigos da nuvem com foto são descartados */
   return x;
 }
 function mergeRows(tk,rows){
@@ -138,7 +119,7 @@ function mergeRows(tk,rows){
       if(ru>lu){
         if(lm&&lm.d)conf++;
         if(r.deleted){arr[i]=null;delete m[id]}
-        else{var nx=sane(r.data,id),o=arr[i];if(o&&o.photoPath&&o.photoPath===nx.photoPath&&o.photo){nx.photo=o.photo;nx.photoExp=o.photoExp}arr[i]=nx;applied.push([id,ru])}
+        else{arr[i]=sane(r.data,id);applied.push([id,ru])}
       }
     }else{
       if(lt&&lt.u>=ru)return;          /* apaguei aqui depois da versão do servidor: continua apagado */
@@ -184,7 +165,7 @@ async function pull(){
   if(changed){
     B().normalize();S=B().S();
     for(tk in apps){var by={};(S[tk]||[]).forEach(function(x){by[String(x.id)]=x});
-      apps[tk].forEach(function(a){var it=by[a[0]],m=mt(tk);if(it)m[a[0]]={h:hashItem(it),u:a[1],d:0,p:it.photoPath||''};else delete m[a[0]]})}
+      apps[tk].forEach(function(a){var it=by[a[0]],m=mt(tk);if(it)m[a[0]]={h:hashItem(it),u:a[1],d:0};else delete m[a[0]]})}
     B().persist();B().afterMerge(prefsChanged);
   }
   if(M.prefs)M.prefs.h=h32(stable(getPrefs(B().S())));
@@ -194,13 +175,7 @@ async function pull(){
 
 /* ---------- enviar ---------- */
 async function push(){
-  var S=B().S(),uid=user.id,ex=S.expenses||[],todo=ex.filter(function(x){return typeof x.photo==='string'&&x.photo.indexOf('data:')===0&&!skip('expenses',x)}),big=0;
-  for(var i=0;i<todo.length;i++){
-    prog=tx('photos',{i:i+1,n:todo.length});render();
-    try{await upPhoto(todo[i])}catch(e){if(e&&e.big)big++;console.warn('foto não enviada',todo[i].id,e)} /* uma foto ruim não trava o resto */
-  }
-  prog='';if(todo.length){B().persist();saveM()}
-  if(big)B().toast('warn',tx('err').split('.')[0],tx('photo_big'));
+  var S=B().S(),uid=user.id;
   for(var tk in T){
     var m=mt(tk),t=tb(tk),by={},rows=[],snap=[];
     (S[tk]||[]).forEach(function(x){if(x&&x.id!=null)by[String(x.id)]=x});
@@ -222,15 +197,16 @@ async function push(){
 }
 
 /* ---------- ciclo de sincronização, fila e nova tentativa ---------- */
-var sb=null,user=null,busy=false,again=false,timer,dT,rt,rmT,fails=0,status='',prog='',msg='',libFail=false,gateFor=null,coolUntil=0,sentTo='',emailVal='',codeVal='',working=false;
+var sb=null,user=null,deleting=false,busy=false,again=false,timer,dT,rt,fails=0,status='',prog='',msg='',libFail=false,gateFor=null,coolUntil=0,sentTo='',emailVal='',codeVal='',working=false;
 async function run(first){
-  if(!sb||!user||!B()||M.owner!==user.id)return;
+  if(!sb||!user||!B()||M.owner!==user.id||deleting)return;
   if(busy){again=true;return}
   clearTimeout(rt);
   if(navigator.onLine===false){status='offline';render();return}
   busy=true;again=false;status='syncing';render();
   try{
-    diff();await pull();await push();await flushRm();await renewPhotos();
+    diff();await pull();await push();
+    try{await purgeLegacy()}catch(le){console.warn('limpeza legada adiada',le)} /* não derruba o sync; tenta de novo no próximo ciclo */
     M.synced=true;M.last=Date.now();fails=0;status='ok';saveM();
   }catch(e){
     console.error('sync',e);fails++;status=navigator.onLine===false?'offline':'err';
@@ -264,6 +240,42 @@ async function signOut(){
   try{await sb.auth.signOut()}catch(e){}
   user=null;gateFor=null;msg='';status='';render();B().renderAccount();
 }
+
+/* ---------- excluir a conta (LGPD): arquivos antigos do Storage -> rpc -> sair -> limpar ---------- */
+function derr(m,detail){var e=new Error(m);e.detail=detail;return e}
+async function removeAllFiles(uid){
+  var names=[],off=0,N=100,guard=0;
+  for(;;){ /* lista TODAS as páginas antes de remover, para a paginação não pular arquivos */
+    var r=await sb.storage.from(BUCKET).list(uid,{limit:N,offset:off,sortBy:{column:'name',order:'asc'}});if(r.error){if(noBucket(r.error))return 0;throw r.error}
+    var d=r.data||[];d.forEach(function(f){if(f&&f.name&&f.id!==null)names.push(uid+'/'+f.name)});
+    if(d.length<N||++guard>2000)break;off+=N;
+  }
+  for(var o=0;o<names.length;o+=100){var x=await sb.storage.from(BUCKET).remove(names.slice(o,o+100));if(x.error){if(noBucket(x.error))return o;throw x.error}}
+  return names.length;
+}
+async function deleteAccount(prog){
+  if(!sb||!user)throw derr(tx('del_nosess'));
+  if(navigator.onLine===false)throw derr(tx('del_offline'));
+  var uid=user.id,t0=0;deleting=true;clearTimeout(timer);clearTimeout(dT);clearTimeout(rt);
+  while(busy&&t0++<75)await new Promise(function(r){setTimeout(r,200)}); /* espera um sync em andamento terminar */
+  try{
+    if(prog)prog(tx('del_files'));await removeAllFiles(uid);   /* o cascade do banco NÃO apaga o Storage: vem primeiro (inofensivo se o bucket já foi removido) */
+    if(prog)prog(tx('del_acc'));var r=await sb.rpc('delete_my_account');if(r.error)throw r.error;
+  }catch(e){ /* falhou: nada local foi tocado; dá para tentar de novo */
+    deleting=false;console.error('delete',e);if(user)schedule(4000);
+    throw derr(navigator.onLine===false?tx('del_offline'):tx('del_err'),e&&e.message);
+  }
+  try{await sb.auth.signOut({scope:'local'})}catch(e){} /* a sessão já não existe no servidor */
+  var erase=true;try{erase=window.confirm(tx('del_local'))}catch(e){}
+  user=null;gateFor=null;msg='';status='';M=blank();saveM(); /* wipe do estado do sync */
+  if(erase)B().reset();
+  deleting=false;render();B().renderAccount();B().toast('info',tx('del_done_t'),tx('del_done'));
+  return {erased:erase};
+}
+function askDelete(){
+  B().strongConfirm({title:tx('del_t'),body:tx('del_body'),word:tx('del_word'),email:user&&user.email||'',typeLbl:tx('del_type',{w:tx('del_word')}),
+    btn:tx('del_go'),retry:tx('del_retry'),cancel:tx('del_cancel'),run:function(p){return deleteAccount(p)}});
+}
 function validEmail(v){return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v)&&v.length<255}
 
 /* ---------- interface (dentro do cartão #ecCloud, no menu Conta) ---------- */
@@ -279,7 +291,8 @@ function render(){
     var n=pending(),line=status==='syncing'?(prog||tx('syncing')):status==='err'?tx('err'):status==='offline'?tx('offline'):(M.last?tx('ok')+' · '+when():'');
     h+='<p class="sub">'+esc(tx('as'))+' <b>'+esc(user.email||'')+'</b></p><p class="g-msg" role="status">'+esc(line)+'</p>'+
       (n>0?'<p class="g-msg">'+esc(tx('pend',{n:n}))+'</p>':'')+
-      '<div class="btns" style="margin-top:12px"><button class="btn" type="button" id="ecNow"'+(busy?' disabled':'')+'>'+esc(tx('now'))+'</button><button class="btn ghost" type="button" id="ecOut">'+esc(tx('out'))+'</button></div>';
+      '<div class="btns" style="margin-top:12px"><button class="btn" type="button" id="ecNow"'+(busy?' disabled':'')+'>'+esc(tx('now'))+'</button><button class="btn ghost" type="button" id="ecOut">'+esc(tx('out'))+'</button></div>'+
+      '<div class="zone"><h4>'+esc(tx('zone'))+'</h4><p class="sub">'+esc(tx('del_sub'))+'</p><button class="btn danger" type="button" id="ecDel" style="margin-top:10px">'+esc(tx('del_btn'))+'</button></div>';
   }else{
     h+='<p class="sub">'+esc(tx('sub'))+'</p><div style="display:grid;gap:10px;margin-top:12px">'+
       '<button class="gbtn" type="button" id="ecG"'+(working?' disabled':'')+'>'+(B()&&B().glogo?B().glogo():'')+'<span>'+esc(tx('g'))+'</span></button>'+
@@ -290,7 +303,7 @@ function render(){
   }
   if(msg)h+='<p class="g-msg" role="status">'+esc(msg)+'</p>';
   box.innerHTML=h;
-  var q=function(i){return box.querySelector(i)},g=q('#ecG'),m=q('#ecM'),v=q('#ecV'),o=q('#ecOut'),nw=q('#ecNow'),e=q('#ecE'),c=q('#ecC');
+  var q=function(i){return box.querySelector(i)},g=q('#ecG'),m=q('#ecM'),v=q('#ecV'),o=q('#ecOut'),nw=q('#ecNow'),dl=q('#ecDel'),e=q('#ecE'),c=q('#ecC');
   if(e)e.oninput=function(){emailVal=this.value};if(c)c.oninput=function(){codeVal=this.value};
   if(g)g.onclick=async function(){working=true;render();var r=await sb.auth.signInWithOAuth({provider:'google',options:{redirectTo:redir()}});if(r.error){working=false;msg=tx('err');render()}};
   if(m)m.onclick=async function(){
@@ -309,7 +322,7 @@ function render(){
     var r=await sb.auth.verifyOtp({email:sentTo,token:cd,type:'email'});
     working=false;if(r.error){msg=tx('bad_code');render()} /* sucesso: onAuthStateChange cuida do resto */
   };
-  if(o)o.onclick=signOut;if(nw)nw.onclick=function(){run(false)};
+  if(o)o.onclick=signOut;if(nw)nw.onclick=function(){run(false)};if(dl)dl.onclick=askDelete;
 }
 
 /* ---------- início ---------- */
@@ -337,8 +350,8 @@ window.addEventListener('online',function(){if(!sb&&configured()&&libFail){libFa
 window.addEventListener('offline',function(){if(user){status='offline';render()}});
 document.addEventListener('visibilitychange',function(){if(document.hidden&&user){try{diff()}catch(e){}}if(!document.hidden&&user&&(pending()>0||Date.now()-M.last>300000))run(false)});
 setInterval(function(){if(user&&!document.hidden)run(false)},900000); /* busca mudanças de outros aparelhos a cada 15 min */
-window.ECSync={schedule:schedule,config:CFG,render:render,summary:function(){return user?user.email||'':''},syncNow:function(){return run(false)}};
-if(window.__EC_TEST__)window.ECSync._t={M:function(){return M},setM:function(m){M=m},diff:diff,mergeRows:mergeRows,pull:pull,push:push,run:run,flushRm:flushRm,renewPhotos:renewPhotos,upPhoto:upPhoto,hashItem:hashItem,pending:pending,onUser:onUser,wipe:wipe,
+window.ECSync={schedule:schedule,config:CFG,render:render,summary:function(){return user?user.email||'':''},lastSync:function(){return M.last||0},syncNow:function(){return run(false)},deleteAccount:deleteAccount};
+if(window.__EC_TEST__)window.ECSync._t={M:function(){return M},setM:function(m){M=m},diff:diff,mergeRows:mergeRows,pull:pull,push:push,run:run,purgeLegacy:purgeLegacy,removeAllFiles:removeAllFiles,hashItem:hashItem,pending:pending,onUser:onUser,wipe:wipe,deleteAccount:deleteAccount,
   inject:function(s,u){sb=s;user=u},sane:sane};
 window.addEventListener('load',boot);
 })();

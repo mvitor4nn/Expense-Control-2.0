@@ -24,17 +24,19 @@ Aba Definições / Budget / Presupuesto → cartão de recorrentes.
 - [ ] Apagar parcelamento → Desfazer.
 - [ ] Idioma: "1/3", moeda e datas seguem o idioma.
 
-## D. Medidor de armazenamento e compressão (SEM entrar na conta)
-Aba Definições / Budget / Presupuesto → cartão "Armazenamento e comprovantes" / "Storage & receipts" / "Almacenamiento y comprobantes".
-- [ ] Anexar 5 fotos (câmera do celular) em gastos diferentes. A barra sobe e o texto mostra "n fotos · x MB".
-- [ ] Tocar "Comprimir fotos": aparece aviso "Fotos comprimidas" e o MB total diminui (ou fica igual se já estavam pequenas).
-- [ ] Com ~50 fotos locais (ou barra ≥ 70%): aparece o aviso em amarelo sugerindo entrar na conta.
-- [ ] Armazenamento cheio: aparece "Não foi possível salvar…" (e o app não trava).
+## D. Sem comprovantes + medidor de armazenamento (SEM entrar na conta)
+- [ ] Tocar em "+" (novo gasto): NÃO existe campo de foto/comprovante nem seletor de arquivo. Salvar um gasto funciona normal.
+- [ ] Abrir um gasto antigo para editar: sem miniatura e sem o clipe 📎 na lista.
+- [ ] Planejar → seção "Armazenamento" / "Storage" / "Almacenamiento": mostra só "x MB de ~5 MB" (nenhum texto de comprovante e nenhum botão "Comprimir fotos").
+- [ ] Atualização de quem usava fotos: ao abrir o app novo, aparece UMA vez o aviso "Comprovantes removidos"; os gastos continuam lá, sem imagem. Reabrir o app: o aviso não volta.
+- [ ] Armazenamento cheio: aparece "Não foi possível salvar…" pedindo backup/apagar gastos antigos (e o app não trava).
 
-## E. Medidor DEPOIS de entrar na conta
-- [ ] Entrar (Menu → Conta). Esperar "Sincronizado".
-- [ ] O medidor cai (fotos viraram links) e o botão "Comprimir fotos" some (só aparece com fotos locais).
-- [ ] As miniaturas/fotos dos gastos antigos continuam abrindo.
+## E. PIN, bloqueio e segurança
+- [ ] Criar PIN de 4 dígitos (Menu → Configurações → Segurança). Fechar e abrir o app: pede o PIN.
+- [ ] Errar o PIN 5 vezes: aparece "Muitas tentativas. Aguarde 30s". Fechar e reabrir o app (ou atualizar a página): a espera CONTINUA (não zera). A 2ª rodada de erros espera mais (1 min, depois 2 min… até 15 min).
+- [ ] Quem já tinha PIN de versão anterior: o PIN antigo continua funcionando e passa a ficar guardado no formato novo sozinho.
+- [ ] Biometria (se o aparelho tiver): ativar e desbloquear.
+- [ ] Menu → Sobre: aparece "Sem comprovantes — por segurança o app não guarda fotos nem imagens de pagamentos".
 
 ## F. Login (pt / en / es)
 - [ ] "Receber código por e-mail": digitar o e-mail → chega o código → digitar → entra.
@@ -45,7 +47,7 @@ Aba Definições / Budget / Presupuesto → cartão "Armazenamento e comprovante
 ## G. Sincronização entre 2 aparelhos
 - [ ] Aparelho 1: criar gasto "Teste A". Aparelho 2 (mesma conta): aparece em até 15 min ou ao tocar "Sincronizar agora".
 - [ ] Editar o mesmo gasto nos dois: vale o último editado; aparece aviso "Atualizado de outro aparelho".
-- [ ] Apagar no aparelho 1 → some no 2. A foto some do Supabase Storage ~2 min depois.
+- [ ] Apagar no aparelho 1 → some no 2.
 
 ## H. Sem internet
 - [ ] Modo avião: criar 2 gastos e editar 1. O app mostra "Sem internet… alterações ficam salvas" e "2 alterações aguardando envio".
