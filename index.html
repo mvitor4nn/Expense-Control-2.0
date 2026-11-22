@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-PZuxUHEDDdNK6pBJ4jfOf6F7rLEIeqqrKcRRvNXjCk4=' 'sha256-s3I+BzVLzvLWkTz7NejtTaJytbFscKGbzgFAlMEWBUk=' https://accounts.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob:; media-src 'self' blob: data:; connect-src 'self' https://www.googleapis.com https://accounts.google.com; frame-src https://accounts.google.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-lAxCuIQNMwhzGlTiQjysUZCGc/GrxveiGoRRbDaePeU=' 'sha256-s3I+BzVLzvLWkTz7NejtTaJytbFscKGbzgFAlMEWBUk=' https://accounts.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob:; media-src 'self' blob: data:; connect-src 'self' https://www.googleapis.com https://accounts.google.com; frame-src https://accounts.google.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="referrer" content="no-referrer">
 <title>Expense Control</title>
@@ -597,7 +597,7 @@ html.has-bg .top,html.has-bg h2.sec,html.has-bg .sub,html.has-bg .hint,html.has-
       <div class="d-body" id="dBody">
         <nav class="d-list" id="dList">
           <div class="phero">
-            <div class="logo hero-av" id="dAvBig" aria-hidden="true">$</div>
+            <div class="logo hero-av" id="dAvBig" role="button" tabindex="0" data-i18n-aria="av_h" style="cursor:pointer">$</div>
             <div class="hero-t"><div class="hero-name" id="dHello"></div><div class="hero-sub"><i class="dot" id="dDot"></i><span id="dSync"></span></div></div>
           </div>
           <div class="tiles">
@@ -681,6 +681,15 @@ html.has-bg .top,html.has-bg h2.sec,html.has-bg .sub,html.has-bg .hint,html.has-
             <input type="range" id="bgDimRange" min="0" max="80" step="5" data-i18n-aria="dim_aria">
             <div class="btns" style="margin-top:12px"><button class="btn" id="bgPick" type="button"></button><button class="btn ghost" id="bgRemove" type="button" hidden data-i18n="photo_remove"></button></div>
             <input type="file" id="bgFile" accept="image/*" hidden>
+          </div>
+          <div class="card" style="margin-top:14px">
+            <h3 data-i18n="av_h">Foto de perfil</h3>
+            <p class="sub" data-i18n="av_sub"></p>
+            <div style="display:flex;align-items:center;gap:16px;margin-top:14px">
+              <div class="logo hero-av" id="avPrev" role="img" data-i18n-aria="av_aria">$</div>
+              <div class="btns" style="margin:0"><button class="btn" id="avPick" type="button"></button><button class="btn ghost" id="avRemove" type="button" hidden data-i18n="photo_remove"></button></div>
+            </div>
+            <input type="file" id="avFile" accept="image/*" hidden>
           </div>
         </section>
 
@@ -919,6 +928,9 @@ var D={
   th_err_m:"Escolha outra imagem (JPG, PNG ou WebP).|Choose another image (JPG, PNG or WebP).|Elige otra imagen (JPG, PNG o WebP).",
   th_big_t:"Foto grande demais|Photo too large|Foto demasiado grande",
   th_big_m:"Não coube no armazenamento. Tente uma foto menor.|It didn't fit in storage. Try a smaller photo.|No cabe en el almacenamiento. Prueba con una foto más pequeña.",
+  av_h:"Foto de perfil|Profile photo|Foto de perfil", av_sub:"Aparece no lugar do $ no topo e no menu. Fica guardada só neste aparelho.|Shown in place of the $ at the top and in the menu. Stored only on this device.|Aparece en lugar del $ arriba y en el menú. Se guarda solo en este dispositivo.", av_aria:"Foto de perfil|Profile photo|Foto de perfil",
+  av_ok_t:"Foto de perfil atualizada|Profile photo updated|Foto de perfil actualizada", av_ok_m:"Ela aparece no topo e no menu.|It shows at the top and in the menu.|Aparece arriba y en el menú.",
+  av_rm_t:"Foto de perfil removida|Profile photo removed|Foto de perfil quitada", av_rm_m:"Voltou o ícone original.|The original icon is back.|Volvió el ícono original.",
   th_rm_t:"Foto removida|Photo removed|Foto quitada", th_rm_m:"O tema original voltou.|The original theme is back.|Volvió el tema original.",
   mus_title:"Música de fundo|Background music|Música de fondo", mus_on:"Ligada|On|Activada", mus_off:"Desligada|Off|Desactivada",
   mus_src_def:"Trilha padrão do app (instrumental sombria)|App default track (dark instrumental)|Pista predeterminada de la app (instrumental oscura)",
@@ -2018,6 +2030,70 @@ $('#bgRemove').addEventListener('click',function(){
 $('#bgDimRange').addEventListener('input',function(){BD=+this.value;$('#bgDim').style.opacity=BD/100;$('#bgDimOut').textContent=BD+'%';syncBg()});
 $('#bgDimRange').addEventListener('change',function(){try{localStorage.setItem(BK,String(BD))}catch(e){}});
 
+/* ---------- foto de perfil: recorte quadrado, guardada só neste aparelho (IndexedDB) ---------- */
+var avBlob=null,avUrl=null;
+function avIdb(mode,val,cb){
+  idb(function(db){
+    var get=mode==='get',done=false;
+    function fin(v){if(!done){done=true;cb(v)}}
+    if(!db){fin(get?null:false);return}
+    try{
+      var t=db.transaction('f',get?'readonly':'readwrite'),st=t.objectStore('f');
+      if(get){var q=st.get('avatar');q.onsuccess=function(){fin(q.result||null)};q.onerror=function(){fin(null)}}
+      else{if(mode==='put')st.put(val,'avatar');else st.delete('avatar');t.oncomplete=function(){fin(true)};t.onerror=function(){fin(false)};t.onabort=function(){fin(false)}}
+    }catch(e){fin(get?null:false)}
+  });
+}
+/* recorta o centro em quadrado e reduz para 320px (JPEG) */
+function avShrink(file,cb){
+  var u=URL.createObjectURL(file),im=new Image();
+  im.onload=function(){
+    URL.revokeObjectURL(u);
+    var w=im.naturalWidth,h=im.naturalHeight;if(!w||!h){cb(null);return}
+    var side=Math.min(w,h),sx=(w-side)/2,sy=(h-side)/2,out=Math.min(320,side),c=document.createElement('canvas');
+    c.width=c.height=out;
+    try{var g=c.getContext('2d');g.fillStyle='#fff';g.fillRect(0,0,out,out);g.drawImage(im,sx,sy,side,side,0,0,out,out);c.toBlob(function(b){cb(b)},'image/jpeg',.88)}catch(e){cb(null)}
+  };
+  im.onerror=function(){URL.revokeObjectURL(u);cb(null)};
+  im.src=u;
+}
+function avSet(b){
+  if(avUrl){URL.revokeObjectURL(avUrl);avUrl=null}
+  avBlob=b||null;
+  if(avBlob)avUrl=URL.createObjectURL(avBlob);
+  syncAv();
+}
+function syncAv(){
+  ['#logoBtn','#dAvBig','#avPrev'].forEach(function(s){
+    var e=$(s);if(!e)return;
+    if(avUrl){
+      var im=e.querySelector('img');
+      if(!im){e.textContent='';im=document.createElement('img');im.alt='';e.appendChild(im)}
+      if(im.getAttribute('src')!==avUrl)im.src=avUrl;
+    }else if(e.firstElementChild||e.textContent!=='$'){e.textContent='$'}
+  });
+  var pk=$('#avPick');if(pk)pk.textContent=avBlob?L('photo_change'):L('photo_pick');
+  var rm=$('#avRemove');if(rm)rm.hidden=!avBlob;
+}
+function avInit(){avIdb('get',null,function(b){if(b)avSet(b);else syncAv()})}
+$('#avPick').addEventListener('click',function(){$('#avFile').click()});
+$('#dAvBig').addEventListener('click',function(){dShow('theme');setTimeout(function(){$('#avFile').click()},0)});
+$('#dAvBig').addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();this.click()}});
+$('#avFile').addEventListener('change',function(){
+  var f=this.files&&this.files[0];this.value='';
+  if(!f)return;
+  avShrink(f,function(b){
+    if(!b){toast('bad',L('th_err_t'),L('th_err_m'));return}
+    avIdb('put',b,function(ok){
+      if(!ok){toast('bad',L('th_big_t'),L('th_big_m'));return}
+      avSet(b);toast('info',L('av_ok_t'),L('av_ok_m'));
+    });
+  });
+});
+$('#avRemove').addEventListener('click',function(){
+  avIdb('del',null,function(){avSet(null);toast('info',L('av_rm_t'),L('av_rm_m'))});
+});
+
 /* ---------- modo privacidade (ocultar valores) ---------- */
 var PVK='cifrao-priv-v1',PRIV=false;
 try{PRIV=localStorage.getItem(PVK)==='1'}catch(e){}
@@ -2377,7 +2453,7 @@ function applyLang(){
   var rb=$('#resetBtn');if(rb.dataset.armed){clearTimeout(rt);delete rb.dataset.armed;rb.classList.remove('armed')}
   setMoney($('#salary'),S.salary);setMoney($('#va'),S.va);
   $('#salLbl').textContent=L('salary_lbl',{m:monthName(CUR).slice(0,3)});
-  refresh();syncMus();syncBg();renderHello();renderLangBtns();renderGoogle();applyMode();applyPriv();if(typeof renderSec==='function')renderSec();renderRem();dSums();dLabel();
+  refresh();syncMus();syncBg();syncAv();renderHello();renderLangBtns();renderGoogle();applyMode();applyPriv();if(typeof renderSec==='function')renderSec();renderRem();dSums();dLabel();
   if(!$('#sheet').hidden)closeSheet();
 }
 function setLang(l){setLangVar(l);S.lang=lang;save();applyLang()}
@@ -2896,7 +2972,7 @@ function boot(){
   /* privacidade: apaga fotos de perfil/fundo guardadas por versões anteriores */
   try{localStorage.removeItem('cifrao-avatar-v1');localStorage.removeItem('cifrao-bg-v1')}catch(e){}
   genRecurring();genInst();rollover();
-  bgInit();applyLang();setIdx(0);checkAlerts();
+  bgInit();avInit();applyLang();setIdx(0);checkAlerts();
   setTimeout(function(){if(!window.ECSync){var c=$('#ecCloud');if(c&&!c.firstChild)c.innerHTML='<p class="sub" role="status">'+L('bk_nofile')+'</p>'}},2500);
   gatesInit();
   gAuto();
