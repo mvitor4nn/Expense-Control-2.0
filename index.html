@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-IpAX/Gq4PKAtbkwaPSouEHWJGmf/+oSbqg+7G1DM4RY=' 'sha256-s3I+BzVLzvLWkTz7NejtTaJytbFscKGbzgFAlMEWBUk=' https://cdn.jsdelivr.net https://accounts.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob:; media-src 'self' blob: data:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://www.googleapis.com https://accounts.google.com; frame-src https://accounts.google.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-44e0g2flvlyzN1sbarSyf9aFKTOSEhu7vlRGRt+DzoU=' 'sha256-s3I+BzVLzvLWkTz7NejtTaJytbFscKGbzgFAlMEWBUk=' https://cdn.jsdelivr.net https://accounts.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob:; media-src 'self' blob: data:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://www.googleapis.com https://accounts.google.com; frame-src https://accounts.google.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="referrer" content="no-referrer">
 <title>Expense Control</title>
@@ -438,7 +438,7 @@ input[type=range]{width:100%;accent-color:var(--accent);margin:10px 0 2px;height
 .bg-img{background:center/cover no-repeat}
 .bg-dim{background:#000;opacity:.45}
 html.has-bg .bg-img,html.has-bg .bg-dim{display:block}
-html.has-bg{--bg:rgba(18,12,32,.7);--surface:rgba(20,14,36,.78);--surface2:rgba(255,255,255,.14);--ink:#fff;--muted:rgba(255,255,255,.88);--line:rgba(255,255,255,.2);--accent:#D6C8FF;--accent-ink:#0B0B12;--warn:#FFC766;--bad:#FF8FA3;--ok:#7FDDA5;color-scheme:dark}
+html.has-bg:root{--bg:rgba(18,12,32,.7);--surface:rgba(20,14,36,.78);--surface2:rgba(255,255,255,.14);--ink:#fff;--muted:rgba(255,255,255,.88);--line:rgba(255,255,255,.2);--accent:#D6C8FF;--accent-ink:#0B0B12;--warn:#FFC766;--bad:#FF8FA3;--ok:#7FDDA5;color-scheme:dark}
 html.has-bg body{background:transparent}
 html.has-bg .card,html.has-bg .tabs,html.has-bg .kpi,html.has-bg .clist,html.has-bg .txl,html.has-bg .invcard,html.has-bg .stat,html.has-bg .iconbtn,html.has-bg .mn-b,html.has-bg .search,html.has-bg .segc{backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
 html.has-bg .panel,html.has-bg .toast,html.has-bg .d-panel{background:rgba(20,14,36,.96)}
@@ -480,6 +480,8 @@ html.has-bg .top,html.has-bg h2.sec,html.has-bg .sub,html.has-bg .hint,html.has-
 </head>
 <body>
 <noscript><p style="padding:24px;font:16px system-ui;color:#F4F4F9;background:#07070B">Expense Control precisa de JavaScript. / needs JavaScript. / necesita JavaScript.</p></noscript>
+
+<div class="bg-img" id="bgImg" aria-hidden="true"></div><div class="bg-dim" id="bgDim" aria-hidden="true"></div>
 
 <div class="app" id="app">
   <header class="top">
@@ -669,7 +671,15 @@ html.has-bg .top,html.has-bg h2.sec,html.has-bg .sub,html.has-bg .hint,html.has-
             <button type="button" data-tmode="dark" aria-pressed="false" data-i18n="mode_dark"></button>
             <button type="button" data-tmode="light" aria-pressed="false" data-i18n="mode_light"></button>
           </div>
-          
+          <div class="card" style="margin-top:14px">
+            <h3 data-i18n="th_photo_h">Papel de parede</h3>
+            <p class="sub" data-i18n="th_sub"></p>
+            <div class="theme-prev" id="thPrev" role="img" aria-live="polite"></div>
+            <div class="rowline" style="margin-top:14px"><span class="sub" data-i18n="dim"></span><b id="bgDimOut"></b></div>
+            <input type="range" id="bgDimRange" min="0" max="80" step="5" data-i18n-aria="dim_aria">
+            <div class="btns" style="margin-top:12px"><button class="btn" id="bgPick" type="button"></button><button class="btn ghost" id="bgRemove" type="button" hidden data-i18n="photo_remove"></button></div>
+            <input type="file" id="bgFile" accept="image/*" hidden>
+          </div>
         </section>
 
         <section class="d-view" id="dv-song" hidden>
@@ -895,6 +905,7 @@ var D={
   m_theme:"Tema|Theme|Tema", m_song:"Música|Music|Música", m_settings:"Configurações|Settings|Ajustes", m_lang:"Idiomas|Language|Idioma",
   back_menu:"Menu|Menu|Menú", back_settings:"Configurações|Settings|Ajustes",
   theme_mode:"Aparência|Appearance|Apariencia", mode_auto:"Automático|Auto|Automático", mode_dark:"Escuro|Dark|Oscuro", mode_light:"Claro|Light|Claro",
+  th_photo_h:"Papel de parede|Wallpaper|Fondo de pantalla",
   th_sub:"Use uma foto sua como fundo do app.|Use your own photo as the app background.|Usa una foto tuya como fondo de la app.",
   no_photo:"Nenhuma foto escolhida|No photo chosen|Ninguna foto elegida", dim:"Escurecer a foto|Darken the photo|Oscurecer la foto",
   dim_aria:"Quanto escurecer a foto de fundo|How much to darken the background photo|Cuánto oscurecer la foto de fondo",
@@ -1932,6 +1943,78 @@ function applyMode(){
 }
 try{matchMedia('(prefers-color-scheme: dark)').addEventListener('change',function(){if(TM==='auto')applyMode()})}catch(e){}
 
+/* ---------- papel de parede: foto da galeria, guardada só neste aparelho (IndexedDB) ---------- */
+var BK='cifrao-bgdim-v1',BD=45,bgBlob=null,bgUrl=null;
+try{var bdv=localStorage.getItem(BK);if(bdv!==null&&isFinite(+bdv))BD=Math.max(0,Math.min(80,+bdv))}catch(e){}
+function bgIdb(mode,val,cb){
+  idb(function(db){
+    var get=mode==='get',done=false;
+    function fin(v){if(!done){done=true;cb(v)}}
+    if(!db){fin(get?null:false);return}
+    try{
+      var t=db.transaction('f',get?'readonly':'readwrite'),st=t.objectStore('f');
+      if(get){var q=st.get('bg');q.onsuccess=function(){fin(q.result||null)};q.onerror=function(){fin(null)}}
+      else{if(mode==='put')st.put(val,'bg');else st.delete('bg');t.oncomplete=function(){fin(true)};t.onerror=function(){fin(false)};t.onabort=function(){fin(false)}}
+    }catch(e){fin(get?null:false)}
+  });
+}
+/* reduz a foto (lado maior 1600px, JPEG) para caber no aparelho e carregar rápido */
+function bgShrink(file,cb){
+  var u=URL.createObjectURL(file),im=new Image();
+  im.onload=function(){
+    URL.revokeObjectURL(u);
+    var w=im.naturalWidth,h=im.naturalHeight;if(!w||!h){cb(null);return}
+    var k=Math.min(1,1600/Math.max(w,h)),c=document.createElement('canvas');
+    c.width=Math.max(1,Math.round(w*k));c.height=Math.max(1,Math.round(h*k));
+    try{c.getContext('2d').drawImage(im,0,0,c.width,c.height);c.toBlob(function(b){cb(b)},'image/jpeg',.85)}catch(e){cb(null)}
+  };
+  im.onerror=function(){URL.revokeObjectURL(u);cb(null)};
+  im.src=u;
+}
+function bgSet(b){
+  if(bgUrl){URL.revokeObjectURL(bgUrl);bgUrl=null}
+  bgBlob=b||null;
+  if(bgBlob)bgUrl=URL.createObjectURL(bgBlob);
+  applyBg();
+}
+function applyBg(){
+  document.documentElement.classList.toggle('has-bg',!!bgBlob);
+  $('#bgImg').style.backgroundImage=bgBlob?'url("'+bgUrl+'")':'none';
+  $('#bgDim').style.opacity=BD/100;
+  syncBg();
+}
+function syncBg(){
+  var pv=$('#thPrev');if(!pv)return;
+  var a=BD/100;
+  pv.classList.toggle('on',!!bgBlob);
+  pv.style.backgroundImage=bgBlob?'linear-gradient(rgba(0,0,0,'+a+'),rgba(0,0,0,'+a+')),url("'+bgUrl+'")':'none';
+  pv.textContent=bgBlob?'':L('no_photo');
+  $('#bgDimRange').value=BD;$('#bgDimOut').textContent=BD+'%';
+  $('#bgPick').textContent=bgBlob?L('photo_change'):L('photo_pick');
+  $('#bgRemove').hidden=!bgBlob;
+  if(typeof dSums==='function')dSums();
+}
+function bgInit(){
+  bgIdb('get',null,function(b){if(b)bgSet(b);else syncBg()});
+}
+$('#bgPick').addEventListener('click',function(){$('#bgFile').click()});
+$('#bgFile').addEventListener('change',function(){
+  var f=this.files&&this.files[0];this.value='';
+  if(!f)return;
+  bgShrink(f,function(b){
+    if(!b){toast('bad',L('th_err_t'),L('th_err_m'));return}
+    bgIdb('put',b,function(ok){
+      if(!ok){toast('bad',L('th_big_t'),L('th_big_m'));return}
+      bgSet(b);toast('info',L('th_ok_t'),L('th_ok_m'));
+    });
+  });
+});
+$('#bgRemove').addEventListener('click',function(){
+  bgIdb('del',null,function(){bgSet(null);toast('info',L('th_rm_t'),L('th_rm_m'))});
+});
+$('#bgDimRange').addEventListener('input',function(){BD=+this.value;$('#bgDim').style.opacity=BD/100;$('#bgDimOut').textContent=BD+'%';syncBg()});
+$('#bgDimRange').addEventListener('change',function(){try{localStorage.setItem(BK,String(BD))}catch(e){}});
+
 /* ---------- modo privacidade (ocultar valores) ---------- */
 var PVK='cifrao-priv-v1',PRIV=false;
 try{PRIV=localStorage.getItem(PVK)==='1'}catch(e){}
@@ -2227,7 +2310,7 @@ $('#pdfBtn').addEventListener('click',function(){
 });
 
 /* ---------- menu do $ ---------- */
-var dView=null,dStack=[],APP_V='3.3';
+var dView=null,dStack=[],APP_V='3.4';
 function dLabel(){
   var v=$('#dv-'+dView+' .back span');if(!v)return;
   var prev=dStack.length?dStack[dStack.length-1]:null;
@@ -2242,7 +2325,7 @@ function dSums(){
     var lg={pt:'Português',en:'English',es:'Español'}[lang]||'';
     var n=S.expenses.length;
     var email=window.ECSync&&ECSync.summary&&ECSync.summary();
-    set('#tsTheme',mode);set('#tsSong',song);set('#tsSec',sec);set('#tsLang',lg);
+    mode=mode+(bgBlob?' · '+L('th_photo'):'');set('#tsTheme',mode);set('#tsSong',song);set('#tsSec',sec);set('#tsLang',lg);
     set('#sumTheme',mode);set('#sumSong',song+(M.name?' · '+M.name:''));set('#sumLang',lg);
     set('#sumData',n===0?L('data_sum_0'):n===1?L('data_sum_1'):L('data_sum_n',{n:n}));
     set('#sumAbout','v'+APP_V);set('#abVer',APP_V);
@@ -2291,7 +2374,7 @@ function applyLang(){
   var rb=$('#resetBtn');if(rb.dataset.armed){clearTimeout(rt);delete rb.dataset.armed;rb.classList.remove('armed')}
   setMoney($('#salary'),S.salary);setMoney($('#va'),S.va);
   $('#salLbl').textContent=L('salary_lbl',{m:monthName(CUR).slice(0,3)});
-  refresh();syncMus();renderHello();renderLangBtns();renderGoogle();applyMode();applyPriv();if(typeof renderSec==='function')renderSec();renderRem();dSums();dLabel();
+  refresh();syncMus();syncBg();renderHello();renderLangBtns();renderGoogle();applyMode();applyPriv();if(typeof renderSec==='function')renderSec();renderRem();dSums();dLabel();
   if(!$('#sheet').hidden)closeSheet();
 }
 function setLang(l){setLangVar(l);S.lang=lang;save();applyLang()}
@@ -2809,7 +2892,7 @@ function boot(){
   /* privacidade: apaga fotos de perfil/fundo guardadas por versões anteriores */
   try{localStorage.removeItem('cifrao-avatar-v1');localStorage.removeItem('cifrao-bg-v1')}catch(e){}
   genRecurring();genInst();rollover();
-  applyLang();setIdx(0);checkAlerts();
+  bgInit();applyLang();setIdx(0);checkAlerts();
   gatesInit();
   gAuto();
   if(PH_PURGED>0){var pn=PH_PURGED;PH_PURGED=0;save();toast('info',L('ph_gone_t'),L('ph_gone_m',{n:pn}))}

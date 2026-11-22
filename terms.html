@@ -1,125 +1,17 @@
-<!doctype html>
-<!-- RASCUNHO TÉCNICO: revise com um advogado antes de publicar. / TECHNICAL DRAFT: have a lawyer review it before publishing. / BORRADOR TÉCNICO: revísalo con un abogado antes de publicar. Campos [PREENCHER] precisam ser completados. -->
-<html lang="pt-BR">
-<head>
-<meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-EEAnm1xzUBy2tKd1WpUf9ae3sd+n4esy7wrHY+t5cY8='; style-src 'unsafe-inline'; img-src 'self' data:; base-uri 'none'; form-action 'none'">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#07070B">
-<title>Termos de uso · Expense Control</title>
-<style>
-:root{--on:#0B0B12;--bg:#07070B;--surface:#13131C;--surface2:#1C1C28;--ink:#F4F4F9;--muted:#A6A6BD;--line:rgba(255,255,255,.1);--accent:#A78BFA;--bad:#FB7185;--warnbg:#3A2A06;--warnink:#FDE68A;color-scheme:dark;
- --font-display:"Sora","Trebuchet MS",system-ui,sans-serif;--font-body:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif}
-:root[data-theme="light"]{--on:#FFFFFF;--bg:#F4F3F9;--surface:#FFFFFF;--surface2:#EFEDF7;--ink:#15112A;--muted:#5E5978;--line:rgba(21,17,42,.12);--accent:#6D28D9;--bad:#BE123C;--warnbg:#FEF3C7;--warnink:#78350F;color-scheme:light}
-@media (prefers-color-scheme:light){:root:not([data-theme]){--on:#FFFFFF;--bg:#F4F3F9;--surface:#FFFFFF;--surface2:#EFEDF7;--ink:#15112A;--muted:#5E5978;--line:rgba(21,17,42,.12);--accent:#6D28D9;--bad:#BE123C;--warnbg:#FEF3C7;--warnink:#78350F;color-scheme:light}}
-*{box-sizing:border-box}html{-webkit-text-size-adjust:100%}
-body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 var(--font-body);padding:0 max(16px,env(safe-area-inset-right,0px)) 40px max(16px,env(safe-area-inset-left,0px))}
-.wrap{max-width:720px;margin:0 auto;padding-top:max(14px,env(safe-area-inset-top,0px))}
-.top{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
-.back{color:var(--accent);font-weight:700;text-decoration:none;padding:8px 0}
-.langs{display:flex;gap:6px}.langs button{border:1px solid var(--line);background:var(--surface2);color:var(--ink);border-radius:999px;padding:7px 14px;font-weight:700;font-size:14px;cursor:pointer}
-.langs button[aria-pressed="true"]{background:var(--accent);color:var(--on);border-color:transparent}
-.draft{margin:14px 0;padding:12px 14px;border-radius:14px;background:var(--warnbg);color:var(--warnink);font-weight:700;font-size:14px;border:1px solid var(--line)}
-h1{font-family:var(--font-display);font-size:28px;line-height:1.15;margin:18px 0 4px}
-.meta{color:var(--muted);font-size:14px;margin:0 0 18px}
-h2{font-family:var(--font-display);font-size:19px;margin:26px 0 8px}
-p,li{margin:0 0 10px}ul{padding-left:22px;margin:0 0 10px}
-mark{background:var(--warnbg);color:var(--warnink);border-radius:4px;padding:0 4px;font-weight:700}
-.card{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:6px 18px 12px}
-.foot{margin-top:22px;display:flex;gap:16px;flex-wrap:wrap}.foot a{color:var(--accent);font-weight:700}
-body[data-l="pt"] [data-l]:not([data-l="pt"]),body[data-l="en"] [data-l]:not([data-l="en"]),body[data-l="es"] [data-l]:not([data-l="es"]){display:none}
-:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
-</style>
-</head>
-<body data-l="pt">
-<div class="wrap">
-<div class="top"><a class="back" href="index.html">← <span data-l="pt">Voltar ao app</span><span data-l="en">Back to the app</span><span data-l="es">Volver a la app</span></a>
-<div class="langs" role="group" aria-label="Idioma / Language"><button type="button" data-go="pt" aria-pressed="true">PT</button><button type="button" data-go="en" aria-pressed="false">EN</button><button type="button" data-go="es" aria-pressed="false">ES</button></div></div>
-<div class="draft" role="note"><span data-l="pt">RASCUNHO TÉCNICO: revise com um advogado antes de publicar.</span><span data-l="en">TECHNICAL DRAFT: have a lawyer review it before publishing.</span><span data-l="es">BORRADOR TÉCNICO: revísalo con un abogado antes de publicar.</span></div>
-<h1 data-l="pt">Termos de uso</h1><p class="meta" data-l="pt">Última atualização: <mark>[PREENCHER data]</mark></p>
-<div class="card" data-l="pt">
-<h2>Aceitação</h2>
-<p>Ao usar o Expense Control você concorda com estes termos e com a Política de privacidade. Se não concordar, não use o app.</p>
-<h2>O que é o app</h2>
-<p>Ferramenta de controle de gastos pessoais. Os cálculos, gráficos e avisos são informativos: não são aconselhamento financeiro, contábil, jurídico ou de investimento. Confira os valores importantes.</p>
-<h2>Conta (opcional)</h2>
-<p>Você pode usar o app sem conta. Se criar uma, informe um e-mail que seja seu e mantenha o acesso e o PIN em segurança. Você é responsável pelo que acontece na sua conta e no seu aparelho.</p>
-<h2>Seus dados</h2>
-<p>Os dados são seus. Ao entrar na conta, você nos autoriza apenas a armazená-los e sincronizá-los para o app funcionar, conforme a Política de privacidade.</p>
-<h2>Uso aceitável</h2>
-<p>Não use o app para atividade ilegal, para tentar acessar dados de outras pessoas, para sobrecarregar ou burlar a segurança do serviço, nem para guardar conteúdo ilícito.</p>
-<h2>Disponibilidade e backups</h2>
-<p>O app funciona offline e as alterações são enviadas quando a conexão volta. Se o mesmo item for editado em dois aparelhos, vale a edição mais recente. Não garantimos funcionamento ininterrupto. Exporte um backup de vez em quando em Menu &gt; Configurações &gt; Dados e backup.</p>
-<h2>Encerramento e exclusão</h2>
-<p>Você pode excluir a conta a qualquer momento em Menu &gt; Configurações &gt; Conta &gt; Zona de risco. A exclusão é permanente. Podemos suspender contas que violem estes termos: <mark>[PREENCHER condições]</mark>.</p>
-<h2>Garantias e responsabilidade</h2>
-<p>O app é oferecido "como está". Na medida permitida pela lei, o responsável não responde por perdas indiretas nem por perda de dados causada por falhas do aparelho, do navegador ou de serviços de terceiros. Isto não afasta direitos que a lei garante ao consumidor.</p>
-<h2>Propriedade intelectual</h2>
-<p>O app, o nome e o design pertencem ao responsável: <mark>[PREENCHER nome do responsável]</mark>. Você mantém seus direitos sobre os seus dados.</p>
+<!doctype html><html lang="pt-BR"><head><title>Termos de uso · Expense Control</title><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="dark light"><style>body{font:16px/1.6 system-ui,-apple-system,"Segoe UI",sans-serif;max-width:720px;margin:0 auto;padding:24px 18px 60px;background:#07070B;color:#F4F4F9}h1{font-size:26px}h2{font-size:18px;margin-top:28px}a{color:#A07BFB}small,.m{color:#9696AD}@media(prefers-color-scheme:light){body{background:#fff;color:#14141c}a{color:#6d3fe0}small,.m{color:#5b5b70}}</style></head><body>
+<p><a href="index.html">← Voltar ao app</a></p>
+<h1>Termos de uso</h1>
+<p class="m">Atualizados em 21/11/2026</p>
+<h2>O que é</h2>
+<p>O Expense Control é um app pessoal de controle de gastos. Ele organiza os números que você mesmo informa.</p>
+<h2>Sem aconselhamento financeiro</h2>
+<p>Os gráficos, alertas e totais são só informativos. Não são recomendação financeira, contábil ou jurídica.</p>
+<h2>Seus dados e backups</h2>
+<p>Você é responsável pelas informações que lança. Sem conta, os dados existem só neste aparelho e podem ser perdidos se você limpar o navegador, trocar de aparelho ou apagar o app. Exporte backups com frequência ou use a conta na nuvem.</p>
+<h2>Sua conta</h2>
+<p>Use uma senha forte e exclusiva. Você pode excluir a conta e todos os dados da nuvem a qualquer momento em Menu › Conta.</p>
+<h2>Sem garantias</h2>
+<p>O app é oferecido "como está", sem garantia de funcionamento ininterrupto ou livre de erros. Na medida permitida pela lei, não nos responsabilizamos por perdas decorrentes do uso ou da impossibilidade de uso do app.</p>
 <h2>Mudanças</h2>
-<p>Podemos alterar estes termos; a data no topo mostra a versão atual. Continuar usando o app depois da mudança significa que você aceita a nova versão.</p>
-<h2>Lei aplicável e contato</h2>
-<p>Lei e foro: <mark>[PREENCHER lei aplicável e foro]</mark>. Contato: <mark>[PREENCHER e-mail de contato]</mark>.</p>
-</div>
-<p class="foot" data-l="pt"><a href="privacy.html">Política de privacidade</a></p>
-<h1 data-l="en">Terms of use</h1><p class="meta" data-l="en">Last updated: <mark>[PREENCHER date]</mark></p>
-<div class="card" data-l="en">
-<h2>Acceptance</h2>
-<p>By using Expense Control you agree to these terms and to the Privacy policy. If you do not agree, do not use the app.</p>
-<h2>What the app is</h2>
-<p>A personal expense tracking tool. Calculations, charts and alerts are informational: they are not financial, accounting, legal or investment advice. Double-check important amounts.</p>
-<h2>Account (optional)</h2>
-<p>You can use the app without an account. If you create one, use an email that is yours and keep your access and PIN safe. You are responsible for what happens in your account and on your device.</p>
-<h2>Your data</h2>
-<p>The data is yours. When you sign in, you only authorize us to store and sync it so the app works, as described in the Privacy policy.</p>
-<h2>Acceptable use</h2>
-<p>Do not use the app for illegal activity, to try to access other people’s data, to overload or bypass the security of the service, or to store unlawful content.</p>
-<h2>Availability and backups</h2>
-<p>The app works offline and changes are sent when the connection returns. If the same item is edited on two devices, the most recent edit wins. We do not guarantee uninterrupted operation. Export a backup now and then in Menu &gt; Settings &gt; Data &amp; backup.</p>
-<h2>Termination and deletion</h2>
-<p>You can delete your account at any time in Menu &gt; Settings &gt; Account &gt; Danger zone. Deletion is permanent. We may suspend accounts that violate these terms: <mark>[PREENCHER conditions]</mark>.</p>
-<h2>Warranties and liability</h2>
-<p>The app is provided "as is". To the extent permitted by law, the person responsible is not liable for indirect losses or for data loss caused by device, browser or third-party service failures. This does not remove rights that the law grants to consumers.</p>
-<h2>Intellectual property</h2>
-<p>The app, its name and design belong to the person responsible: <mark>[PREENCHER name of the person responsible]</mark>. You keep your rights over your data.</p>
-<h2>Changes</h2>
-<p>We may change these terms; the date at the top shows the current version. Continuing to use the app after a change means you accept the new version.</p>
-<h2>Governing law and contact</h2>
-<p>Law and venue: <mark>[PREENCHER governing law and venue]</mark>. Contact: <mark>[PREENCHER contact email]</mark>.</p>
-</div>
-<p class="foot" data-l="en"><a href="privacy.html">Privacy policy</a></p>
-<h1 data-l="es">Términos de uso</h1><p class="meta" data-l="es">Última actualización: <mark>[PREENCHER fecha]</mark></p>
-<div class="card" data-l="es">
-<h2>Aceptación</h2>
-<p>Al usar Expense Control aceptas estos términos y la Política de privacidad. Si no estás de acuerdo, no uses la app.</p>
-<h2>Qué es la app</h2>
-<p>Una herramienta de control de gastos personales. Los cálculos, gráficos y avisos son informativos: no son asesoramiento financiero, contable, jurídico ni de inversión. Verifica los montos importantes.</p>
-<h2>Cuenta (opcional)</h2>
-<p>Puedes usar la app sin cuenta. Si creas una, usa un correo que sea tuyo y mantén tu acceso y tu PIN seguros. Eres responsable de lo que ocurra en tu cuenta y en tu dispositivo.</p>
-<h2>Tus datos</h2>
-<p>Los datos son tuyos. Al entrar en la cuenta, solo nos autorizas a almacenarlos y sincronizarlos para que la app funcione, según la Política de privacidad.</p>
-<h2>Uso aceptable</h2>
-<p>No uses la app para actividades ilegales, para intentar acceder a datos de otras personas, para sobrecargar o burlar la seguridad del servicio, ni para guardar contenido ilícito.</p>
-<h2>Disponibilidad y copias</h2>
-<p>La app funciona sin conexión y los cambios se envían cuando vuelve la conexión. Si el mismo elemento se edita en dos dispositivos, vale la edición más reciente. No garantizamos un funcionamiento ininterrumpido. Exporta una copia de vez en cuando en Menú &gt; Ajustes &gt; Datos y copia.</p>
-<h2>Cierre y eliminación</h2>
-<p>Puedes eliminar tu cuenta en cualquier momento en Menú &gt; Ajustes &gt; Cuenta &gt; Zona de riesgo. La eliminación es permanente. Podemos suspender cuentas que incumplan estos términos: <mark>[PREENCHER condiciones]</mark>.</p>
-<h2>Garantías y responsabilidad</h2>
-<p>La app se ofrece "tal cual". En la medida permitida por la ley, el responsable no responde por pérdidas indirectas ni por pérdida de datos causada por fallos del dispositivo, del navegador o de servicios de terceros. Esto no afecta los derechos que la ley garantiza al consumidor.</p>
-<h2>Propiedad intelectual</h2>
-<p>La app, su nombre y su diseño pertenecen al responsable: <mark>[PREENCHER nombre del responsable]</mark>. Conservas tus derechos sobre tus datos.</p>
-<h2>Cambios</h2>
-<p>Podemos cambiar estos términos; la fecha de arriba indica la versión vigente. Seguir usando la app después de un cambio significa que aceptas la nueva versión.</p>
-<h2>Ley aplicable y contacto</h2>
-<p>Ley y foro: <mark>[PREENCHER ley aplicable y foro]</mark>. Contacto: <mark>[PREENCHER correo de contacto]</mark>.</p>
-</div>
-<p class="foot" data-l="es"><a href="privacy.html">Política de privacidad</a></p>
-</div>
-<script>(function(){var d=document,b=d.body,L=['pt','en','es'];
-try{var t=localStorage.getItem('cifrao-theme-v1');if(t==='light'||t==='dark')d.documentElement.setAttribute('data-theme',t)}catch(e){}
-function pick(){try{var q=/[?&]l=(pt|en|es)/.exec(location.search);if(q)return q[1];var s=JSON.parse(localStorage.getItem('cifrao-v1')||'{}');if(L.indexOf(s.lang)>-1)return s.lang}catch(e){}
-var n=(navigator.language||'pt').slice(0,2);return L.indexOf(n)>-1?n:'pt'}
-function set(l){b.setAttribute('data-l',l);d.documentElement.lang={pt:'pt-BR',en:'en',es:'es'}[l];[].forEach.call(d.querySelectorAll('.langs button'),function(x){x.setAttribute('aria-pressed',x.dataset.go===l?'true':'false')});d.title=b.querySelector('h1[data-l="'+l+'"]').textContent+' · Expense Control'}
-[].forEach.call(d.querySelectorAll('.langs button'),function(x){x.onclick=function(){set(x.dataset.go)}});set(pick())})();</script>
-</body>
-</html>
+<p>Estes termos podem mudar; a data de atualização fica no topo desta página. Veja também a <a href="privacy.html">política de privacidade</a>.</p>
+</body></html>

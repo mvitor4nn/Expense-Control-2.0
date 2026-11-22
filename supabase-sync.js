@@ -27,7 +27,7 @@
       syncing: 'Sincronizando…', synced: 'Sincronizado.', pending: 'Sem internet: as mudanças ficam guardadas e vão quando voltar.',
       confirm_mail: 'Conta criada. Abra o e-mail de confirmação e depois entre.',
       e_cred: 'E-mail ou senha incorretos.', e_exists: 'Esse e-mail já tem conta. Use "Entrar".', e_net: 'Sem conexão com a nuvem. Tente de novo.',
-      e_rate: 'Muitas tentativas. Aguarde um pouco.', e_gen: 'Não foi possível concluir. Tente de novo.', e_fill: 'Preencha e-mail e senha (mín. 8 caracteres).',
+      e_rate: 'Muitas tentativas. Aguarde um pouco.', e_unconf: 'E-mail ainda não confirmado. Abra a mensagem de confirmação que chegou na sua caixa (veja o spam) e depois entre.', e_off: 'O login por e-mail está desligado no Supabase (Authentication > Providers > Email).', e_key: 'A chave do Supabase foi recusada. Confira CFG.url e CFG.key.', e_weak: 'Senha fraca ou curta demais. Use pelo menos 8 caracteres.', e_gen: 'Não foi possível concluir. Tente de novo.', e_fill: 'Preencha e-mail e senha (mín. 8 caracteres).',
       out_confirm: 'Sair desta conta? Os dados continuam na nuvem e serão removidos deste aparelho.',
       out_unsynced: 'Não deu para sincronizar agora. Sair mesmo assim apaga mudanças ainda não enviadas. Continuar?',
       del_t: 'Excluir conta e dados?', del_b: 'Apaga para sempre a conta e todos os gastos, metas e preferências guardados na nuvem, e limpa este aparelho. Não dá para desfazer.',
@@ -41,7 +41,7 @@
       syncing: 'Syncing…', synced: 'Synced.', pending: 'Offline: changes are kept and will be sent when you are back online.',
       confirm_mail: 'Account created. Open the confirmation email, then sign in.',
       e_cred: 'Wrong email or password.', e_exists: 'This email already has an account. Use "Sign in".', e_net: 'No connection to the cloud. Try again.',
-      e_rate: 'Too many attempts. Please wait a moment.', e_gen: 'Could not complete. Try again.', e_fill: 'Enter email and password (min. 8 characters).',
+      e_rate: 'Too many attempts. Please wait a moment.', e_unconf: 'Email not confirmed yet. Open the confirmation message (check spam), then sign in.', e_off: 'Email sign-in is turned off in Supabase (Authentication > Providers > Email).', e_key: 'Supabase rejected the key. Check CFG.url and CFG.key.', e_weak: 'Password too weak or short. Use at least 8 characters.', e_gen: 'Could not complete. Try again.', e_fill: 'Enter email and password (min. 8 characters).',
       out_confirm: 'Sign out? Your data stays in the cloud and will be removed from this device.',
       out_unsynced: 'Could not sync right now. Signing out anyway erases changes not yet sent. Continue?',
       del_t: 'Delete account and data?', del_b: 'Permanently deletes your account and all expenses, goals and preferences stored in the cloud, and clears this device. This cannot be undone.',
@@ -55,7 +55,7 @@
       syncing: 'Sincronizando…', synced: 'Sincronizado.', pending: 'Sin internet: los cambios se guardan y se envían al volver.',
       confirm_mail: 'Cuenta creada. Abre el correo de confirmación y luego entra.',
       e_cred: 'Correo o contraseña incorrectos.', e_exists: 'Ese correo ya tiene cuenta. Usa "Entrar".', e_net: 'Sin conexión con la nube. Inténtalo de nuevo.',
-      e_rate: 'Demasiados intentos. Espera un momento.', e_gen: 'No se pudo completar. Inténtalo de nuevo.', e_fill: 'Escribe correo y contraseña (mín. 8 caracteres).',
+      e_rate: 'Demasiados intentos. Espera un momento.', e_unconf: 'Correo aún sin confirmar. Abre el mensaje de confirmación (revisa el spam) y luego entra.', e_off: 'El acceso por correo está desactivado en Supabase (Authentication > Providers > Email).', e_key: 'Supabase rechazó la clave. Revisa CFG.url y CFG.key.', e_weak: 'Contraseña débil o corta. Usa al menos 8 caracteres.', e_gen: 'No se pudo completar. Inténtalo de nuevo.', e_fill: 'Escribe correo y contraseña (mín. 8 caracteres).',
       out_confirm: '¿Salir de esta cuenta? Los datos siguen en la nube y se quitarán de este dispositivo.',
       out_unsynced: 'No se pudo sincronizar ahora. Salir igual borra los cambios aún no enviados. ¿Continuar?',
       del_t: '¿Eliminar cuenta y datos?', del_b: 'Borra para siempre la cuenta y todos los gastos, metas y preferencias guardados en la nube, y limpia este dispositivo. No se puede deshacer.',
@@ -93,8 +93,13 @@
     if (/invalid login|invalid credentials/i.test(m)) return T('e_cred');
     if (/already (been )?registered|already exists/i.test(m)) return T('e_exists');
     if (/failed to fetch|network|load failed|offline/i.test(m)) return T('e_net');
+    if (/not confirmed|email_not_confirmed/i.test(m)) return T('e_unconf');
     if (/rate limit|too many|over_.*limit/i.test(m)) return T('e_rate');
-    return T('e_gen');
+    if (/signups? not allowed|provider is disabled|email.*(logins?|signups?).*disabled|email_provider_disabled/i.test(m)) return T('e_off');
+    if (/invalid api key|apikey|jwt|no api key/i.test(m)) return T('e_key');
+    if (/weak.?password|password.*(at least|should|short|weak)/i.test(m)) return T('e_weak');
+    var d = String((e && (e.code || e.status)) || '') + ' ' + m; d = d.trim().slice(0, 90); /* detalhe técnico para diagnóstico */
+    return T('e_gen') + (d ? ' [' + d + ']' : '');
   }
   function rerender() { try { B() && B().renderAccount && B().renderAccount(); } catch (e) {} }
   function setMsg(k, t) { msg = { k: k, t: t || '' }; rerender(); }

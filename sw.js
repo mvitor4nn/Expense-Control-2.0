@@ -1,19 +1,31 @@
-/* Expense Control - service worker (offline-first). Só cacheia arquivos do próprio app. */
-const V='ec-v3',CORE=['./','index.html','supabase-sync.js','manifest.webmanifest','icon-192.png','icon-512.png','icon-maskable-512.png','apple-touch-icon.png'],OPT=['vendor/supabase.js'];
-self.addEventListener('install',e=>{e.waitUntil(caches.open(V).then(async c=>{await c.addAll(CORE);await Promise.all(OPT.map(u=>c.add(u).catch(()=>{})))}).then(()=>self.skipWaiting()))});
-self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(k=>Promise.all(k.filter(x=>x!==V).map(x=>caches.delete(x)))).then(()=>self.clients.claim()))});
-self.addEventListener('fetch',e=>{
-  const r=e.request,u=new URL(r.url);
-  if(r.method!=='GET'||u.origin!==location.origin)return; /* Supabase/Google/fontes vão direto à rede (nunca cacheados) */
-  const nav=r.mode==='navigate',key=nav?'index.html':r;
-  e.respondWith((async()=>{
-    try{
-      const x=await Promise.race([fetch(r),new Promise((_,j)=>setTimeout(()=>j(new Error('timeout')),nav?5000:15000))]);
-      if(x&&x.ok&&x.type==='basic'){const c=x.clone();caches.open(V).then(h=>h.put(key,c))} /* nunca guarda 404/500 */
-      return x;
-    }catch(err){
-      const m=await caches.match(key,{ignoreSearch:true});
-      return m||(nav?await caches.match('index.html'):new Response('',{status:504,statusText:'offline'}));
-    }
-  })());
+/* Expense Control — service worker: abre offline; nunca guarda respostas de outros sites (Supabase, Google). */
+var CACHE='ec-shell-v3.4';
+var SHELL=['./','index.html','supabase-sync.js','manifest.webmanifest','icon-192.png','icon-512.png','apple-touch-icon.png','privacy.html','terms.html'];
+
+self.addEventListener('install',function(e){
+  e.waitUntil(caches.open(CACHE).then(function(c){return c.addAll(SHELL)}).then(function(){return self.skipWaiting()}));
+});
+self.addEventListener('activate',function(e){
+  e.waitUntil(caches.keys().then(function(ks){
+    return Promise.all(ks.filter(function(k){return k!==CACHE}).map(function(k){return caches.delete(k)}));
+  }).then(function(){return self.clients.claim()}));
+});
+self.addEventListener('fetch',function(e){
+  var req=e.request,url=new URL(req.url);
+  if(req.method!=='GET'||url.origin!==self.location.origin)return; /* Supabase/Google/fontes: direto da rede, sem cache */
+  e.respondWith(
+    fetch(req).then(function(res){
+      if(res&&res.ok){var copy=res.clone();caches.open(CACHE).then(function(c){c.put(req,copy)})}
+      return res;
+    }).catch(function(){
+      return caches.match(req).then(function(m){return m||(req.mode==='navigate'?caches.match('index.html'):Response.error())});
+    })
+  );
+});
+self.addEventListener('notificationclick',function(e){
+  e.notification.close();
+  e.waitUntil(self.clients.matchAll({type:'window',includeUncontrolled:true}).then(function(l){
+    for(var i=0;i<l.length;i++){if('focus' in l[i])return l[i].focus()}
+    if(self.clients.openWindow)return self.clients.openWindow('./');
+  }));
 });

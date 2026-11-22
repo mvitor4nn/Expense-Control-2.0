@@ -1,146 +1,18 @@
-<!doctype html>
-<!-- RASCUNHO TÉCNICO: revise com um advogado antes de publicar. / TECHNICAL DRAFT: have a lawyer review it before publishing. / BORRADOR TÉCNICO: revísalo con un abogado antes de publicar. Campos [PREENCHER] precisam ser completados. -->
-<html lang="pt-BR">
-<head>
-<meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-EEAnm1xzUBy2tKd1WpUf9ae3sd+n4esy7wrHY+t5cY8='; style-src 'unsafe-inline'; img-src 'self' data:; base-uri 'none'; form-action 'none'">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#07070B">
-<title>Política de privacidade · Expense Control</title>
-<style>
-:root{--on:#0B0B12;--bg:#07070B;--surface:#13131C;--surface2:#1C1C28;--ink:#F4F4F9;--muted:#A6A6BD;--line:rgba(255,255,255,.1);--accent:#A78BFA;--bad:#FB7185;--warnbg:#3A2A06;--warnink:#FDE68A;color-scheme:dark;
- --font-display:"Sora","Trebuchet MS",system-ui,sans-serif;--font-body:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif}
-:root[data-theme="light"]{--on:#FFFFFF;--bg:#F4F3F9;--surface:#FFFFFF;--surface2:#EFEDF7;--ink:#15112A;--muted:#5E5978;--line:rgba(21,17,42,.12);--accent:#6D28D9;--bad:#BE123C;--warnbg:#FEF3C7;--warnink:#78350F;color-scheme:light}
-@media (prefers-color-scheme:light){:root:not([data-theme]){--on:#FFFFFF;--bg:#F4F3F9;--surface:#FFFFFF;--surface2:#EFEDF7;--ink:#15112A;--muted:#5E5978;--line:rgba(21,17,42,.12);--accent:#6D28D9;--bad:#BE123C;--warnbg:#FEF3C7;--warnink:#78350F;color-scheme:light}}
-*{box-sizing:border-box}html{-webkit-text-size-adjust:100%}
-body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 var(--font-body);padding:0 max(16px,env(safe-area-inset-right,0px)) 40px max(16px,env(safe-area-inset-left,0px))}
-.wrap{max-width:720px;margin:0 auto;padding-top:max(14px,env(safe-area-inset-top,0px))}
-.top{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
-.back{color:var(--accent);font-weight:700;text-decoration:none;padding:8px 0}
-.langs{display:flex;gap:6px}.langs button{border:1px solid var(--line);background:var(--surface2);color:var(--ink);border-radius:999px;padding:7px 14px;font-weight:700;font-size:14px;cursor:pointer}
-.langs button[aria-pressed="true"]{background:var(--accent);color:var(--on);border-color:transparent}
-.draft{margin:14px 0;padding:12px 14px;border-radius:14px;background:var(--warnbg);color:var(--warnink);font-weight:700;font-size:14px;border:1px solid var(--line)}
-h1{font-family:var(--font-display);font-size:28px;line-height:1.15;margin:18px 0 4px}
-.meta{color:var(--muted);font-size:14px;margin:0 0 18px}
-h2{font-family:var(--font-display);font-size:19px;margin:26px 0 8px}
-p,li{margin:0 0 10px}ul{padding-left:22px;margin:0 0 10px}
-mark{background:var(--warnbg);color:var(--warnink);border-radius:4px;padding:0 4px;font-weight:700}
-.card{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:6px 18px 12px}
-.foot{margin-top:22px;display:flex;gap:16px;flex-wrap:wrap}.foot a{color:var(--accent);font-weight:700}
-body[data-l="pt"] [data-l]:not([data-l="pt"]),body[data-l="en"] [data-l]:not([data-l="en"]),body[data-l="es"] [data-l]:not([data-l="es"]){display:none}
-:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
-</style>
-</head>
-<body data-l="pt">
-<div class="wrap">
-<div class="top"><a class="back" href="index.html">← <span data-l="pt">Voltar ao app</span><span data-l="en">Back to the app</span><span data-l="es">Volver a la app</span></a>
-<div class="langs" role="group" aria-label="Idioma / Language"><button type="button" data-go="pt" aria-pressed="true">PT</button><button type="button" data-go="en" aria-pressed="false">EN</button><button type="button" data-go="es" aria-pressed="false">ES</button></div></div>
-<div class="draft" role="note"><span data-l="pt">RASCUNHO TÉCNICO: revise com um advogado antes de publicar.</span><span data-l="en">TECHNICAL DRAFT: have a lawyer review it before publishing.</span><span data-l="es">BORRADOR TÉCNICO: revísalo con un abogado antes de publicar.</span></div>
-<h1 data-l="pt">Política de privacidade</h1><p class="meta" data-l="pt">Última atualização: <mark>[PREENCHER data]</mark></p>
-<div class="card" data-l="pt">
+<!doctype html><html lang="pt-BR"><head><title>Privacidade · Expense Control</title><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="dark light"><style>body{font:16px/1.6 system-ui,-apple-system,"Segoe UI",sans-serif;max-width:720px;margin:0 auto;padding:24px 18px 60px;background:#07070B;color:#F4F4F9}h1{font-size:26px}h2{font-size:18px;margin-top:28px}a{color:#A07BFB}small,.m{color:#9696AD}@media(prefers-color-scheme:light){body{background:#fff;color:#14141c}a{color:#6d3fe0}small,.m{color:#5b5b70}}</style></head><body>
+<p><a href="index.html">← Voltar ao app</a></p>
+<h1>Política de privacidade</h1>
+<p class="m">Atualizada em 21/11/2026</p>
 <h2>Resumo</h2>
-<p>Seus dados ficam neste aparelho por padrão. A conta na nuvem é opcional: só se você entrar nela é que dados saem do aparelho. O app não tem anúncios, não tem ferramentas de análise (analytics) e não vende seus dados.</p>
-<h2>Quem é o responsável</h2>
-<p>Responsável: <mark>[PREENCHER nome do responsável]</mark>. Contato para assuntos de privacidade: <mark>[PREENCHER e-mail de contato]</mark>. Encarregado (DPO), se houver: <mark>[PREENCHER]</mark>.</p>
-<h2>Dados guardados só no seu aparelho</h2>
-<p>Gastos, gastos recorrentes, parcelas, metas, rendas, salário, vale, limite e avisos, orçamentos por categoria, apelido, foto de perfil, imagem de fundo, música escolhida, PIN, tema e idioma ficam no armazenamento do navegador deste aparelho. Sem conta, nada disso é enviado a nós.</p>
-<h2>Conta na nuvem (opcional)</h2>
-<p>Você pode entrar com um código enviado ao seu e-mail ou com a sua conta Google. Ao entrar, o app sincroniza com o nosso servidor (Supabase):</p>
-<ul><li>gastos, gastos recorrentes, parcelas, metas e rendas;</li><li>preferências: salário, vale, limite, aviso, apelido e orçamentos por categoria.</li></ul><p>O app <b>não aceita fotos nem imagens de comprovantes ou pagamentos</b>: por segurança, essa função foi removida e nenhuma imagem é enviada ou guardada na nuvem.</p>
-<p>Não são enviados: PIN, foto de perfil, imagem de fundo, música, tema e idioma. Também guardamos o seu e-mail de login. Região do servidor: <mark>[PREENCHER região]</mark>.</p>
-<h2>Backup antigo no Google Drive (opcional)</h2>
-<p>Quem já usava pode restaurar um backup guardado na pasta privada do app no próprio Google Drive. Para isso o app pede acesso apenas a essa pasta e ao seu e-mail. Só acontece se você conectar o Drive e você pode sair a qualquer momento.</p>
-<h2>Serviços de terceiros contatados pelo navegador</h2>
-<ul><li>Google Fonts: carrega as fontes do app; o Google recebe o seu endereço IP.</li><li>Google: login com Google e o backup opcional do Drive, apenas se você usar.</li><li>Supabase: login, banco de dados e armazenamento, apenas se você entrar na conta.</li><li>jsDelivr (CDN): biblioteca do login, quando ela não está junto do app.</li><li>Hospedagem do site (<mark>[PREENCHER provedor de hospedagem]</mark>): pode registrar acessos técnicos (IP, data) em logs.</li></ul>
-<p>O app não contém anúncios, rastreadores nem ferramentas de análise de terceiros, e não vende nem compartilha dados seus para marketing.</p>
-<h2>Notificações</h2>
-<p>Os avisos de limite são criados no próprio aparelho. O app não usa servidor de envio de notificações.</p>
-<h2>Seus direitos (LGPD)</h2>
-<p>Você pode confirmar o tratamento, acessar, corrigir, exportar e excluir seus dados:</p>
-<ul><li>Exportar: Menu &gt; Configurações &gt; Dados e backup (arquivo .json ou planilha .csv). O .json contém apenas os dados em texto, sem imagens.</li><li>Excluir a conta e os dados na nuvem: Menu &gt; Configurações &gt; Conta &gt; Zona de risco &gt; Excluir minha conta. Apaga a conta e as linhas de dados (e qualquer arquivo antigo que ainda exista). É permanente.</li><li>Apagar os dados deste aparelho: Menu &gt; Configurações &gt; Dados e backup &gt; Zona de risco.</li></ul>
-<p>Para outros pedidos, escreva para <mark>[PREENCHER e-mail de contato]</mark>.</p>
-<h2>Por quanto tempo guardamos</h2>
-<p>Enquanto a sua conta existir. Ao excluir a conta, os dados são apagados do banco. Cópias de segurança do provedor podem existir por um período: <mark>[PREENCHER prazo informado pelo provedor]</mark>.</p>
-<h2>Segurança</h2>
-<p>A comunicação usa HTTPS. Cada pessoa só acessa as próprias linhas (regras de acesso no banco). Nenhum sistema é 100% seguro; proteja o seu aparelho e use o PIN do app.</p>
-<h2>Crianças</h2>
-<p>O app não é direcionado a crianças. <mark>[PREENCHER faixa etária mínima]</mark>.</p>
-<h2>Mudanças e contato</h2>
-<p>Podemos atualizar esta política; a data no topo mostra a última versão. Dúvidas: <mark>[PREENCHER e-mail de contato]</mark>.</p>
-</div>
-<p class="foot" data-l="pt"><a href="terms.html">Termos de uso</a></p>
-<h1 data-l="en">Privacy policy</h1><p class="meta" data-l="en">Last updated: <mark>[PREENCHER date]</mark></p>
-<div class="card" data-l="en">
-<h2>Summary</h2>
-<p>Your data stays on this device by default. A cloud account is optional: data only leaves the device if you sign in. The app has no ads, no analytics tools and does not sell your data.</p>
-<h2>Who is responsible</h2>
-<p>Controller: <mark>[PREENCHER name of the person responsible]</mark>. Privacy contact: <mark>[PREENCHER contact email]</mark>. Data protection officer, if any: <mark>[PREENCHER]</mark>.</p>
-<h2>Data kept only on your device</h2>
-<p>Expenses, recurring expenses, installments, goals, income, salary, meal voucher, limit and alerts, category budgets, nickname, profile photo, background image, chosen song, PIN, theme and language are kept in this browser’s storage on this device. Without an account none of it is sent to us.</p>
-<h2>Cloud account (optional)</h2>
-<p>You can sign in with a code sent to your email or with your Google account. When you sign in, the app syncs with our server (Supabase):</p>
-<ul><li>expenses, recurring expenses, installments, goals and income;</li><li>preferences: salary, meal voucher, limit, warning level, nickname and category budgets.</li></ul><p>The app <b>does not accept photos or images of receipts or payments</b>: for safety that feature was removed and no image is sent to or stored in the cloud.</p>
-<p>Not sent: PIN, profile photo, background image, song, theme and language. We also store your login email. Server region: <mark>[PREENCHER region]</mark>.</p>
-<h2>Old Google Drive backup (optional)</h2>
-<p>People who already used it can restore a backup kept in the app’s private folder in their own Google Drive. The app asks only for access to that folder and your email. It only happens if you connect Drive, and you can disconnect at any time.</p>
-<h2>Third-party services contacted by the browser</h2>
-<ul><li>Google Fonts: loads the app fonts; Google receives your IP address.</li><li>Google: Google sign-in and the optional Drive backup, only if you use them.</li><li>Supabase: sign-in, database and storage, only if you sign in.</li><li>jsDelivr (CDN): the sign-in library, when it is not bundled with the app.</li><li>Site hosting (<mark>[PREENCHER hosting provider]</mark>): may keep technical access logs (IP, date).</li></ul>
-<p>The app contains no ads, trackers or third-party analytics tools, and does not sell or share your data for marketing.</p>
-<h2>Notifications</h2>
-<p>Limit alerts are created on the device itself. The app does not use a push notification server.</p>
-<h2>Your rights (LGPD)</h2>
-<p>You can confirm processing, access, correct, export and delete your data:</p>
-<ul><li>Export: Menu &gt; Settings &gt; Data &amp; backup (.json file or .csv spreadsheet). The .json contains text data only, no images.</li><li>Delete the account and cloud data: Menu &gt; Settings &gt; Account &gt; Danger zone &gt; Delete my account. It erases the account and the data rows (and any old file that may still exist). It is permanent.</li><li>Erase data on this device: Menu &gt; Settings &gt; Data &amp; backup &gt; Danger zone.</li></ul>
-<p>For other requests, write to <mark>[PREENCHER contact email]</mark>.</p>
-<h2>How long we keep data</h2>
-<p>As long as your account exists. When you delete the account, the data is erased from the database. The provider may keep backups for a period: <mark>[PREENCHER period stated by the provider]</mark>.</p>
-<h2>Security</h2>
-<p>Communication uses HTTPS. Each person can only reach their own rows (access rules in the database). No system is 100% secure; protect your device and use the app PIN.</p>
-<h2>Children</h2>
-<p>The app is not aimed at children. <mark>[PREENCHER minimum age]</mark>.</p>
-<h2>Changes and contact</h2>
-<p>We may update this policy; the date at the top shows the latest version. Questions: <mark>[PREENCHER contact email]</mark>.</p>
-</div>
-<p class="foot" data-l="en"><a href="terms.html">Terms of use</a></p>
-<h1 data-l="es">Política de privacidad</h1><p class="meta" data-l="es">Última actualización: <mark>[PREENCHER fecha]</mark></p>
-<div class="card" data-l="es">
-<h2>Resumen</h2>
-<p>Tus datos se quedan en este dispositivo por defecto. La cuenta en la nube es opcional: solo salen datos del dispositivo si inicias sesión. La app no tiene anuncios, no tiene herramientas de analítica y no vende tus datos.</p>
-<h2>Quién es el responsable</h2>
-<p>Responsable: <mark>[PREENCHER nombre del responsable]</mark>. Contacto de privacidad: <mark>[PREENCHER correo de contacto]</mark>. Delegado de protección de datos, si existe: <mark>[PREENCHER]</mark>.</p>
-<h2>Datos guardados solo en tu dispositivo</h2>
-<p>Gastos, gastos recurrentes, cuotas, metas, ingresos, salario, vale, límite y avisos, presupuestos por categoría, apodo, foto de perfil, imagen de fondo, canción elegida, PIN, tema e idioma se guardan en el almacenamiento del navegador de este dispositivo. Sin cuenta, nada de esto se nos envía.</p>
-<h2>Cuenta en la nube (opcional)</h2>
-<p>Puedes entrar con un código enviado a tu correo o con tu cuenta de Google. Al entrar, la app sincroniza con nuestro servidor (Supabase):</p>
-<ul><li>gastos, gastos recurrentes, cuotas, metas e ingresos;</li><li>preferencias: salario, vale, límite, aviso, apodo y presupuestos por categoría.</li></ul><p>La app <b>no acepta fotos ni imágenes de comprobantes o pagos</b>: por seguridad esa función se eliminó y no se envía ni guarda ninguna imagen en la nube.</p>
-<p>No se envían: PIN, foto de perfil, imagen de fondo, canción, tema ni idioma. También guardamos tu correo de acceso. Región del servidor: <mark>[PREENCHER región]</mark>.</p>
-<h2>Copia antigua en Google Drive (opcional)</h2>
-<p>Quien ya la usaba puede restaurar una copia guardada en la carpeta privada de la app en su propio Google Drive. La app solo pide acceso a esa carpeta y a tu correo. Solo ocurre si conectas Drive y puedes salir cuando quieras.</p>
-<h2>Servicios de terceros que contacta el navegador</h2>
-<ul><li>Google Fonts: carga las fuentes de la app; Google recibe tu dirección IP.</li><li>Google: inicio de sesión con Google y la copia opcional en Drive, solo si los usas.</li><li>Supabase: inicio de sesión, base de datos y almacenamiento, solo si inicias sesión.</li><li>jsDelivr (CDN): la biblioteca del inicio de sesión, cuando no viene incluida con la app.</li><li>Alojamiento del sitio (<mark>[PREENCHER proveedor de alojamiento]</mark>): puede registrar accesos técnicos (IP, fecha) en logs.</li></ul>
-<p>La app no contiene anuncios, rastreadores ni herramientas de analítica de terceros, y no vende ni comparte tus datos para marketing.</p>
-<h2>Notificaciones</h2>
-<p>Los avisos de límite se crean en el propio dispositivo. La app no usa un servidor de notificaciones push.</p>
-<h2>Tus derechos (LGPD)</h2>
-<p>Puedes confirmar el tratamiento, acceder, corregir, exportar y eliminar tus datos:</p>
-<ul><li>Exportar: Menú &gt; Ajustes &gt; Datos y copia (archivo .json u hoja de cálculo .csv). El .json contiene solo datos de texto, sin imágenes.</li><li>Eliminar la cuenta y los datos en la nube: Menú &gt; Ajustes &gt; Cuenta &gt; Zona de riesgo &gt; Eliminar mi cuenta. Borra la cuenta y las filas de datos (y cualquier archivo antiguo que aún exista). Es permanente.</li><li>Borrar los datos de este dispositivo: Menú &gt; Ajustes &gt; Datos y copia &gt; Zona de riesgo.</li></ul>
-<p>Para otras solicitudes, escribe a <mark>[PREENCHER correo de contacto]</mark>.</p>
-<h2>Cuánto tiempo guardamos los datos</h2>
-<p>Mientras exista tu cuenta. Al eliminarla, los datos se borran de la base. El proveedor puede conservar copias de seguridad durante un periodo: <mark>[PREENCHER plazo informado por el proveedor]</mark>.</p>
-<h2>Seguridad</h2>
-<p>La comunicación usa HTTPS. Cada persona solo accede a sus propias filas (reglas de acceso en la base). Ningún sistema es 100% seguro; protege tu dispositivo y usa el PIN de la app.</p>
-<h2>Niños</h2>
-<p>La app no está dirigida a niños. <mark>[PREENCHER edad mínima]</mark>.</p>
-<h2>Cambios y contacto</h2>
-<p>Podemos actualizar esta política; la fecha de arriba indica la última versión. Dudas: <mark>[PREENCHER correo de contacto]</mark>.</p>
-</div>
-<p class="foot" data-l="es"><a href="terms.html">Términos de uso</a></p>
-</div>
-<script>(function(){var d=document,b=d.body,L=['pt','en','es'];
-try{var t=localStorage.getItem('cifrao-theme-v1');if(t==='light'||t==='dark')d.documentElement.setAttribute('data-theme',t)}catch(e){}
-function pick(){try{var q=/[?&]l=(pt|en|es)/.exec(location.search);if(q)return q[1];var s=JSON.parse(localStorage.getItem('cifrao-v1')||'{}');if(L.indexOf(s.lang)>-1)return s.lang}catch(e){}
-var n=(navigator.language||'pt').slice(0,2);return L.indexOf(n)>-1?n:'pt'}
-function set(l){b.setAttribute('data-l',l);d.documentElement.lang={pt:'pt-BR',en:'en',es:'es'}[l];[].forEach.call(d.querySelectorAll('.langs button'),function(x){x.setAttribute('aria-pressed',x.dataset.go===l?'true':'false')});d.title=b.querySelector('h1[data-l="'+l+'"]').textContent+' · Expense Control'}
-[].forEach.call(d.querySelectorAll('.langs button'),function(x){x.onclick=function(){set(x.dataset.go)}});set(pick())})();</script>
-</body>
-</html>
+<p>Seus gastos ficam neste aparelho. A conta na nuvem é opcional. O app não guarda fotos nem imagens de comprovantes, não tem anúncios e não inclui rastreadores ou ferramentas de análise.</p>
+<h2>Sem conta</h2>
+<p>Gastos, parcelas, recorrentes, receitas, metas, preferências, PIN e tema ficam apenas no armazenamento deste navegador/aparelho. Nada disso é enviado para servidor nenhum. Ao abrir o app, o navegador baixa as fontes (Sora e Inter) do Google Fonts, o que expõe seu endereço IP ao Google.</p>
+<h2>Com conta (opcional)</h2>
+<p>Se você criar uma conta, guardamos na nuvem (Supabase): seu e-mail, sua senha (o Supabase guarda apenas um hash, nós não temos acesso a ela), e os dados do app: gastos, parcelas, recorrentes, receitas, metas e preferências (salário, vale-alimentação, limites e orçamentos). Cada usuário só consegue ler e alterar as próprias linhas (controle de acesso por usuário no banco). O PIN e as configurações de tema e música não são enviados.</p>
+<p>Ao usar a conta, o navegador carrega a biblioteca do Supabase a partir do CDN jsDelivr.</p>
+<h2>Importação do Google Drive (antiga)</h2>
+<p>Se você já usou o backup antigo no Google Drive, o app pode ler, uma única vez e só quando você pedir, o arquivo de backup na pasta privada do app no seu Drive. O app não envia mais nada para o Drive.</p>
+<h2>Seus controles</h2>
+<p><b>Sair</b> da conta: sincroniza e remove os dados deste aparelho (continuam na nuvem). <b>Excluir conta e dados da nuvem</b>: apaga para sempre a conta e tudo o que está na nuvem. <b>Apagar tudo deste aparelho</b> (Dados): limpa o que está guardado aqui. Você também pode exportar um backup em JSON.</p>
+<h2>Contato</h2>
+<p>Dúvidas ou pedidos sobre seus dados: <b>[coloque aqui o seu e-mail de contato]</b></p>
+</body></html>
