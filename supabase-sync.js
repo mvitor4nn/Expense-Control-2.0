@@ -1,344 +1,376 @@
-/* Expense Control - sincronização Supabase v2 (login + banco + fotos).
-   - Só a anon key PÚBLICA vai em CFG.key. NUNCA coloque a service_role aqui.
-   - Sem URL/KEY configuradas o app continua 100% local (nada é enviado).
-   - Conflitos: por item, vence o updated_at (hora da edição) mais novo.
-   - Exclusões viajam como "tombstone" (deleted=true) e removem a foto do Storage.
-   - Sem internet: as mudanças ficam numa fila salva no aparelho e são reenviadas sozinhas. */
-(function(){
-'use strict';
-var CFG={url:'',key:''}; /* <- preencha: Project URL e anon/publishable key (Settings > API) */
-var LIB=['vendor/supabase.js','https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js'];
-var T={expenses:'expenses',recurring:'recurring',inst:'installments',goals:'goals',incomes:'incomes'};
-var BUCKET='receipts',TTL=2592000,RENEW=864000000,RM_DELAY=120000,KM='ec-sync-v1',PK=['salary','va','limit','warn','nick','budgets'];
-var TX={
-pt:{t:'Conta e nuvem',sub:'Entre para sincronizar seus gastos e comprovantes entre aparelhos.',g:'Continuar com Google',m:'Receber código por e-mail',em:'seu@email.com',code:'Código do e-mail',ver:'Entrar com o código',out:'Sair',now:'Sincronizar agora',
- ok:'Sincronizado',sent:'Enviamos um código para seu e-mail. Digite-o abaixo (o link do e-mail também funciona neste navegador).',err:'Falha ao sincronizar. Nova tentativa automática em breve.',off:'Nuvem não configurada neste app.',
- offline:'Sem internet. As alterações ficam salvas e serão enviadas quando a conexão voltar.',pend:'{n} alteração(ões) aguardando envio',syncing:'Sincronizando…',photos:'Enviando fotos ({i}/{n})…',
- bad_email:'Digite um e-mail válido.',bad_code:'Digite o código recebido.',wait:'Aguarde {s}s para pedir outro código.',loading:'Carregando login…',nolib:'Não consegui carregar o login. Conecte-se à internet e tente de novo.',
- swc:'Este aparelho tem dados de OUTRA conta. Para proteger sua privacidade, vamos apagar os dados locais antes de entrar com esta conta. Os dados da outra conta continuam salvos na nuvem dela. Continuar?',
- outp:'Ainda há {n} alteração(ões) não enviadas e não foi possível enviá-las agora. Sair mesmo assim?',conf_t:'Atualizado de outro aparelho',conf:'{n} item(ns) tinham uma versão mais nova em outro aparelho.',
- photo_big:'Alguma foto é grande demais e ficou só neste aparelho.',as:'Conectado como'},
-en:{t:'Account & cloud',sub:'Sign in to sync your spending and receipts across devices.',g:'Continue with Google',m:'Email me a code',em:'you@email.com',code:'Email code',ver:'Sign in with code',out:'Sign out',now:'Sync now',
- ok:'Synced',sent:'We emailed you a code. Type it below (the email link also works in this browser).',err:'Sync failed. It will retry automatically soon.',off:'Cloud is not configured in this app.',
- offline:'No internet. Changes are saved and will be sent when the connection returns.',pend:'{n} change(s) waiting to upload',syncing:'Syncing…',photos:'Uploading photos ({i}/{n})…',
- bad_email:'Enter a valid email.',bad_code:'Enter the code you received.',wait:'Wait {s}s before asking for another code.',loading:'Loading sign-in…',nolib:"Couldn't load sign-in. Connect to the internet and try again.",
- swc:'This device has data from a DIFFERENT account. To protect your privacy, local data will be erased before signing in with this account. The other account\'s data stays safe in its cloud. Continue?',
- outp:'{n} change(s) are not uploaded yet and could not be sent now. Sign out anyway?',conf_t:'Updated from another device',conf:'{n} item(s) had a newer version on another device.',
- photo_big:'A photo is too large and stayed on this device only.',as:'Signed in as'},
-es:{t:'Cuenta y nube',sub:'Entra para sincronizar tus gastos y comprobantes entre dispositivos.',g:'Continuar con Google',m:'Recibir código por correo',em:'tu@correo.com',code:'Código del correo',ver:'Entrar con el código',out:'Salir',now:'Sincronizar ahora',
- ok:'Sincronizado',sent:'Te enviamos un código por correo. Escríbelo abajo (el enlace del correo también funciona en este navegador).',err:'Error al sincronizar. Se reintentará automáticamente.',off:'La nube no está configurada en esta app.',
- offline:'Sin internet. Los cambios quedan guardados y se enviarán cuando vuelva la conexión.',pend:'{n} cambio(s) esperando envío',syncing:'Sincronizando…',photos:'Subiendo fotos ({i}/{n})…',
- bad_email:'Escribe un correo válido.',bad_code:'Escribe el código recibido.',wait:'Espera {s}s para pedir otro código.',loading:'Cargando inicio de sesión…',nolib:'No pude cargar el inicio de sesión. Conéctate a internet e inténtalo de nuevo.',
- swc:'Este dispositivo tiene datos de OTRA cuenta. Para proteger tu privacidad, borraremos los datos locales antes de entrar con esta cuenta. Los datos de la otra cuenta siguen guardados en su nube. ¿Continuar?',
- outp:'Aún hay {n} cambio(s) sin enviar y no se pudieron enviar ahora. ¿Salir de todos modos?',conf_t:'Actualizado desde otro dispositivo',conf:'{n} elemento(s) tenían una versión más nueva en otro dispositivo.',
- photo_big:'Una foto es demasiado grande y quedó solo en este dispositivo.',as:'Conectado como'}};
-var B=function(){return window.ECBridge};
-function tx(k,v){var l=(B()&&B().lang()||'pt').slice(0,2),s=(TX[l]||TX.pt)[k]||TX.pt[k]||k;if(v)for(var x in v)s=s.split('{'+x+'}').join(v[x]);return s}
-function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
-function configured(){return !!(CFG.url&&CFG.key)}
+/* Expense Control — sincronização na nuvem (Supabase).
+ * Só usa a ponte window.ECBridge do index.html. Dados: tabelas ec_items / ec_prefs (RLS: cada usuário só vê o que é seu).
+ * Sem fotos, sem Storage. Fila offline: tudo o que mudou fica pendente (hash por item) e vai quando a internet voltar.
+ * Conflito: se o mesmo item mudou nos dois lados, vale o deste aparelho (e ele é reenviado). */
+(function () {
+  'use strict';
 
-/* ---------- estado persistido (meta por item, exclusões, fila de remoção de fotos) ---------- */
-function blank(){return {v:1,owner:null,synced:false,cur:{},meta:{},tomb:{},rm:[],prefs:null,last:0}}
-var M=blank();
-try{var _r=JSON.parse(localStorage.getItem(KM));if(_r&&_r.v===1)M=Object.assign(blank(),_r)}catch(e){}
-function saveM(){try{localStorage.setItem(KM,JSON.stringify(M))}catch(e){}}
-function mt(k){return M.meta[k]||(M.meta[k]={})}
-function tb(k){return M.tomb[k]||(M.tomb[k]={})}
-function stable(o){if(o===null||typeof o!=='object')return JSON.stringify(o);if(Array.isArray(o))return '['+o.map(stable).join(',')+']';
-  return '{'+Object.keys(o).sort().filter(function(k){return o[k]!==undefined}).map(function(k){return JSON.stringify(k)+':'+stable(o[k])}).join(',')+'}'}
-function h32(s){var h=5381;for(var i=0;i<s.length;i++)h=((h<<5)+h+s.charCodeAt(i))|0;return (h>>>0).toString(36)+'.'+s.length.toString(36)}
-/* a URL assinada e a validade NÃO entram no hash nem vão para o banco: renovar URL não conta como edição */
-function core(x){var c={};Object.keys(x).forEach(function(k){if(k!=='photo'&&k!=='photoExp')c[k]=x[k]});return c}
-function hashItem(x){var c=core(x);if(typeof x.photo==='string'&&x.photo.indexOf('data:')===0)c.__ph=x.photo.length+':'+x.photo.slice(-24);return h32(stable(c))}
-function getPrefs(S){var o={};PK.forEach(function(k){o[k]=S[k]});return o}
-function iso(ms){return new Date(ms).toISOString()}
+  /* ===== PREENCHA (valores públicos: Project URL e anon/publishable key — NUNCA a service_role) ===== */
+  var CFG = {
+    url: 'https://irnlbwvijmapwjkgyunf.supabase.co',
+    key: 'sb_publishable_VWYVqAlQTb9qkxxMOED1GQ_RMp5mOON', /* chave pública (publishable) */
+    lib: 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js' /* versão fixa; veja o README para hospedar local */
+  };
 
-/* ---------- fila de remoção de fotos (adiada p/ dar tempo do "Desfazer") ---------- */
-function queueRm(p){if(!p)return;if(!M.rm.some(function(r){return r.path===p}))M.rm.push({path:p,at:Date.now()+RM_DELAY})}
-function unRm(p){if(!p)return;M.rm=M.rm.filter(function(r){return r.path!==p})}
+  var META_KEY = 'ec-sync-v1';           /* casa com o padrão ec- que "Apagar tudo deste aparelho" já limpa */
+  var KINDS = ['expenses', 'recurring', 'inst', 'incomes', 'goals'];
+  var client = null, session = null, meta = null, running = null, libP = null;
+  var msg = { k: '', t: '' }, timer = null, lastTry = 0, started = false;
 
-/* ---------- detecta o que mudou localmente desde a última sincronização ---------- */
-function skip(tk,x){return tk==='expenses'&&B().isSeed(x)}
-function diff(){
-  var S=B().S(),now=Date.now();
-  for(var tk in T){
-    var arr=S[tk]||[],m=mt(tk),t=tb(tk),seen={};
-    arr.forEach(function(x){
-      if(!x||x.id==null||skip(tk,x))return;
-      var id=String(x.id),h=hashItem(x),p=x.photoPath||'',c=m[id];seen[id]=1;
-      if(t[id])delete t[id]; /* reapareceu (Desfazer): cancela a exclusão */
-      if(!c)m[id]={h:h,u:now,d:1,p:p};
-      else if(c.h!==h){if(c.p&&c.p!==p)queueRm(c.p);c.h=h;c.u=now;c.d=1;c.p=p}
-      if(p)unRm(p);
-    });
-    Object.keys(m).forEach(function(id){
-      if(seen[id])return;
-      t[id]={u:now,p:m[id].p||''};if(m[id].p)queueRm(m[id].p);delete m[id];
-    });
-  }
-  if(M.prefs){var ph=h32(stable(getPrefs(S)));if(M.prefs.h!==ph){M.prefs.h=ph;M.prefs.u=now;M.prefs.d=1}}
-  saveM();
-}
-function pending(){diff();var n=0;for(var tk in T){var m=mt(tk);Object.keys(m).forEach(function(i){if(m[i].d)n++});n+=Object.keys(tb(tk)).length}
-  if(M.prefs&&M.prefs.d)n++;return n}
-
-/* ---------- fotos ---------- */
-function b2b(d,mime){var b=atob(d),u=new Uint8Array(b.length);for(var i=0;i<b.length;i++)u[i]=b.charCodeAt(i);return new Blob([u],{type:mime})}
-async function upPhoto(x){
-  var i=x.photo.indexOf(','),head=x.photo.slice(0,i),mm=/^data:image\/(jpeg|png|webp);base64$/.exec(head);
-  if(!mm)throw new Error('foto inválida');
-  var blob=b2b(x.photo.slice(i+1),'image/'+mm[1]);if(blob.size>2097152){var e=new Error('foto grande');e.big=1;throw e}
-  var ext=mm[1]==='jpeg'?'jpg':mm[1],path=user.id+'/'+String(x.id).replace(/[^A-Za-z0-9_-]/g,'_')+'.'+ext;
-  var r=await sb.storage.from(BUCKET).upload(path,blob,{upsert:true,contentType:'image/'+mm[1],cacheControl:'3600'});if(r.error)throw r.error;
-  var s=await sb.storage.from(BUCKET).createSignedUrl(path,TTL);if(s.error)throw s.error;
-  if(x.photoPath&&x.photoPath!==path)queueRm(x.photoPath);
-  x.photoPath=path;x.photo=s.data.signedUrl;x.photoExp=Date.now()+TTL*1000; /* local guarda só a URL */
-  var m=mt('expenses')[String(x.id)];if(m){m.h=hashItem(x);m.p=path;m.d=1} /* não altera u: subir foto não é edição */
-}
-async function renewPhotos(){
-  var S=B().S(),now=Date.now(),need=[];
-  (S.expenses||[]).forEach(function(x){
-    if(!x.photoPath||x.photoPath.indexOf(user.id+'/')!==0)return;
-    if(typeof x.photo==='string'&&x.photo.indexOf('data:')===0)return;
-    if(!x.photo||!x.photoExp||x.photoExp-now<RENEW)need.push(x);
-  });
-  if(!need.length)return;
-  for(var o=0;o<need.length;o+=100){
-    var part=need.slice(o,o+100),r=await sb.storage.from(BUCKET).createSignedUrls(part.map(function(x){return x.photoPath}),TTL);
-    if(r.error)throw r.error;
-    var by={};(r.data||[]).forEach(function(d){if(d&&d.path)by[d.path]=d});
-    part.forEach(function(x){var d=by[x.photoPath];
-      if(d&&d.signedUrl&&!d.error){x.photo=d.signedUrl;x.photoExp=now+TTL*1000}
-      else x.photoExp=now+3600000; /* arquivo ausente: tenta de novo em 1h, sem insistir a cada ciclo */});
-  }
-  B().persist();B().refresh();
-}
-async function flushRm(){
-  var now=Date.now(),pre=user.id+'/',due=M.rm.filter(function(r){return r.at<=now&&r.path.indexOf(pre)===0}).map(function(r){return r.path});
-  M.rm=M.rm.filter(function(r){return r.path.indexOf(pre)===0});
-  if(due.length){var r=await sb.storage.from(BUCKET).remove(due);if(r.error)throw r.error;M.rm=M.rm.filter(function(x){return due.indexOf(x.path)<0})}
-  clearTimeout(rmT);if(M.rm.length){var nx=Math.max(1000,Math.min.apply(null,M.rm.map(function(r){return r.at}))-Date.now()+1000);rmT=setTimeout(function(){run(false)},nx)}
-}
-
-/* ---------- baixar e mesclar (por item, vence o updated_at mais novo) ---------- */
-function sane(data,id){
-  var x;try{x=JSON.parse(JSON.stringify(data||{}))}catch(e){x={}}
-  if(typeof x!=='object'||Array.isArray(x))x={};
-  x.id=String(id);delete x.photo;delete x.photoExp; /* a URL é gerada de novo a partir do photoPath */
-  if(x.photoPath!==undefined&&!(typeof x.photoPath==='string'&&x.photoPath.indexOf(user.id+'/')===0&&/^[0-9a-f-]{36}\/[A-Za-z0-9_.-]+$/.test(x.photoPath)))delete x.photoPath;
-  return x;
-}
-function mergeRows(tk,rows){
-  var S=B().S(),arr=S[tk]=S[tk]||[],m=mt(tk),t=tb(tk),applied=[],conf=0,idx={};
-  arr.forEach(function(x,i){if(x&&x.id!=null)idx[String(x.id)]=i});
-  rows.forEach(function(r){
-    var id=String(r.id),ru=Date.parse(r.updated_at)||0,i=idx[id],lm=m[id],lt=t[id];
-    if(i!==undefined){
-      var lu=lm?lm.u:0;
-      if(ru>lu){
-        if(lm&&lm.d)conf++;
-        if(r.deleted){arr[i]=null;delete m[id]}
-        else{var nx=sane(r.data,id),o=arr[i];if(o&&o.photoPath&&o.photoPath===nx.photoPath&&o.photo){nx.photo=o.photo;nx.photoExp=o.photoExp}arr[i]=nx;applied.push([id,ru])}
-      }
-    }else{
-      if(lt&&lt.u>=ru)return;          /* apaguei aqui depois da versão do servidor: continua apagado */
-      if(lt)delete t[id];
-      if(r.deleted)return;
-      arr.push(sane(r.data,id));idx[id]=arr.length-1;applied.push([id,ru]);
+  /* ---------- textos ---------- */
+  var TX = {
+    pt: {
+      title: 'Conta na nuvem', sub: 'Entre para guardar e usar seus gastos em outros aparelhos. Sem conta, tudo fica só neste aparelho.',
+      nocfg: 'A nuvem ainda não está configurada neste app. Seus dados ficam só neste aparelho.',
+      email: 'E-mail', pass: 'Senha (mín. 8 caracteres)', signin: 'Entrar', signup: 'Criar conta', loading: 'Carregando…',
+      as: 'Conectado como', last: 'Última sincronização', never: 'ainda não', now: 'Sincronizar agora', out: 'Sair', del: 'Excluir conta e dados da nuvem',
+      syncing: 'Sincronizando…', synced: 'Sincronizado.', pending: 'Sem internet: as mudanças ficam guardadas e vão quando voltar.',
+      confirm_mail: 'Conta criada. Abra o e-mail de confirmação e depois entre.',
+      e_cred: 'E-mail ou senha incorretos.', e_exists: 'Esse e-mail já tem conta. Use "Entrar".', e_net: 'Sem conexão com a nuvem. Tente de novo.',
+      e_rate: 'Muitas tentativas. Aguarde um pouco.', e_gen: 'Não foi possível concluir. Tente de novo.', e_fill: 'Preencha e-mail e senha (mín. 8 caracteres).',
+      out_confirm: 'Sair desta conta? Os dados continuam na nuvem e serão removidos deste aparelho.',
+      out_unsynced: 'Não deu para sincronizar agora. Sair mesmo assim apaga mudanças ainda não enviadas. Continuar?',
+      del_t: 'Excluir conta e dados?', del_b: 'Apaga para sempre a conta e todos os gastos, metas e preferências guardados na nuvem, e limpa este aparelho. Não dá para desfazer.',
+      del_w: 'EXCLUIR', del_type: 'Para confirmar, digite EXCLUIR ou o seu e-mail:', del_go: 'Excluir tudo', del_retry: 'Tentar novamente', cancel: 'Cancelar'
+    },
+    en: {
+      title: 'Cloud account', sub: 'Sign in to keep your expenses and use them on other devices. Without an account, everything stays on this device.',
+      nocfg: 'Cloud sync is not set up in this app yet. Your data stays only on this device.',
+      email: 'Email', pass: 'Password (min. 8 characters)', signin: 'Sign in', signup: 'Create account', loading: 'Loading…',
+      as: 'Signed in as', last: 'Last sync', never: 'not yet', now: 'Sync now', out: 'Sign out', del: 'Delete account and cloud data',
+      syncing: 'Syncing…', synced: 'Synced.', pending: 'Offline: changes are kept and will be sent when you are back online.',
+      confirm_mail: 'Account created. Open the confirmation email, then sign in.',
+      e_cred: 'Wrong email or password.', e_exists: 'This email already has an account. Use "Sign in".', e_net: 'No connection to the cloud. Try again.',
+      e_rate: 'Too many attempts. Please wait a moment.', e_gen: 'Could not complete. Try again.', e_fill: 'Enter email and password (min. 8 characters).',
+      out_confirm: 'Sign out? Your data stays in the cloud and will be removed from this device.',
+      out_unsynced: 'Could not sync right now. Signing out anyway erases changes not yet sent. Continue?',
+      del_t: 'Delete account and data?', del_b: 'Permanently deletes your account and all expenses, goals and preferences stored in the cloud, and clears this device. This cannot be undone.',
+      del_w: 'DELETE', del_type: 'To confirm, type DELETE or your email:', del_go: 'Delete everything', del_retry: 'Try again', cancel: 'Cancel'
+    },
+    es: {
+      title: 'Cuenta en la nube', sub: 'Inicia sesión para guardar tus gastos y usarlos en otros dispositivos. Sin cuenta, todo queda solo en este dispositivo.',
+      nocfg: 'La nube aún no está configurada en esta app. Tus datos quedan solo en este dispositivo.',
+      email: 'Correo', pass: 'Contraseña (mín. 8 caracteres)', signin: 'Entrar', signup: 'Crear cuenta', loading: 'Cargando…',
+      as: 'Conectado como', last: 'Última sincronización', never: 'aún no', now: 'Sincronizar ahora', out: 'Salir', del: 'Eliminar cuenta y datos de la nube',
+      syncing: 'Sincronizando…', synced: 'Sincronizado.', pending: 'Sin internet: los cambios se guardan y se envían al volver.',
+      confirm_mail: 'Cuenta creada. Abre el correo de confirmación y luego entra.',
+      e_cred: 'Correo o contraseña incorrectos.', e_exists: 'Ese correo ya tiene cuenta. Usa "Entrar".', e_net: 'Sin conexión con la nube. Inténtalo de nuevo.',
+      e_rate: 'Demasiados intentos. Espera un momento.', e_gen: 'No se pudo completar. Inténtalo de nuevo.', e_fill: 'Escribe correo y contraseña (mín. 8 caracteres).',
+      out_confirm: '¿Salir de esta cuenta? Los datos siguen en la nube y se quitarán de este dispositivo.',
+      out_unsynced: 'No se pudo sincronizar ahora. Salir igual borra los cambios aún no enviados. ¿Continuar?',
+      del_t: '¿Eliminar cuenta y datos?', del_b: 'Borra para siempre la cuenta y todos los gastos, metas y preferencias guardados en la nube, y limpia este dispositivo. No se puede deshacer.',
+      del_w: 'ELIMINAR', del_type: 'Para confirmar, escribe ELIMINAR o tu correo:', del_go: 'Eliminar todo', del_retry: 'Reintentar', cancel: 'Cancelar'
     }
-  });
-  S[tk]=arr.filter(function(x){return x});
-  return {applied:applied,conf:conf};
-}
-async function fetchSince(tbl,since){
-  var out=[],from=0,N=1000;
-  for(;;){
-    var q=sb.from(tbl).select('id,data,deleted,updated_at,synced_at').eq('user_id',user.id).order('synced_at',{ascending:true}).order('id',{ascending:true}).range(from,from+N-1);
-    if(since)q=q.gte('synced_at',since);
-    var r=await q;if(r.error)throw r.error;
-    out=out.concat(r.data||[]);if(!r.data||r.data.length<N)break;from+=N;
-  }
-  return out;
-}
-async function pull(){
-  var raw={},any=false,tk;
-  for(tk in T){
-    var c=M.cur[tk],since=c?iso(Date.parse(c)-60000):null;
-    raw[tk]=await fetchSince(T[tk],since);
-    if(raw[tk].some(function(r){return !r.deleted}))any=true;
-  }
-  var pr=await sb.from('profiles').select('prefs,updated_at').eq('user_id',user.id).maybeSingle();if(pr.error)throw pr.error;
-  var S=B().S();
-  if(!M.synced&&(any||pr.data)&&S.sample&&!B().hasUserData())B().dropSeed(); /* aparelho novo: some o exemplo, entra o real */
-  var conf=0,changed=false,prefsChanged=false,apps={};
-  for(tk in T){
-    if(!raw[tk].length)continue;
-    var res=mergeRows(tk,raw[tk]);conf+=res.conf;apps[tk]=res.applied;if(res.applied.length||res.conf)changed=true;
-    var mx=raw[tk].reduce(function(a,r){return r.synced_at>a?r.synced_at:a},M.cur[tk]||'');M.cur[tk]=mx;
-  }
-  var rp=pr.data;
-  if(rp){
-    var ru=Date.parse(rp.updated_at)||0;
-    if(!M.prefs||ru>M.prefs.u){B().applyPrefs(rp.prefs||{});prefsChanged=true;changed=true;M.prefs={h:null,u:ru,d:0}}
-  }else if(!M.prefs){var has=B().hasUserData();M.prefs={h:null,u:has?Date.now():0,d:has?1:0}}
-  if(changed){
-    B().normalize();S=B().S();
-    for(tk in apps){var by={};(S[tk]||[]).forEach(function(x){by[String(x.id)]=x});
-      apps[tk].forEach(function(a){var it=by[a[0]],m=mt(tk);if(it)m[a[0]]={h:hashItem(it),u:a[1],d:0,p:it.photoPath||''};else delete m[a[0]]})}
-    B().persist();B().afterMerge(prefsChanged);
-  }
-  if(M.prefs)M.prefs.h=h32(stable(getPrefs(B().S())));
-  saveM();
-  if(conf)B().toast('info',tx('conf_t'),tx('conf',{n:conf}));
-}
+  };
+  function lang() { var b = B(); var l = b && b.lang && b.lang(); return TX[l] ? l : 'pt'; }
+  function T(k) { return TX[lang()][k] || TX.pt[k] || k; }
 
-/* ---------- enviar ---------- */
-async function push(){
-  var S=B().S(),uid=user.id,ex=S.expenses||[],todo=ex.filter(function(x){return typeof x.photo==='string'&&x.photo.indexOf('data:')===0&&!skip('expenses',x)}),big=0;
-  for(var i=0;i<todo.length;i++){
-    prog=tx('photos',{i:i+1,n:todo.length});render();
-    try{await upPhoto(todo[i])}catch(e){if(e&&e.big)big++;console.warn('foto não enviada',todo[i].id,e)} /* uma foto ruim não trava o resto */
+  /* ---------- utilidades ---------- */
+  function B() { return window.ECBridge; }
+  function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function configured() { return /^https:\/\/[a-z0-9-]+\.supabase\.co\/?$/i.test(CFG.url) && CFG.key.length > 20; }
+  function ss(v) { /* JSON estável (chaves ordenadas): o jsonb do Postgres reordena chaves */
+    if (v === null || typeof v !== 'object') return JSON.stringify(v);
+    if (Array.isArray(v)) return '[' + v.map(ss).join(',') + ']';
+    return '{' + Object.keys(v).filter(function (k) { return v[k] !== undefined; }).sort().map(function (k) { return JSON.stringify(k) + ':' + ss(v[k]); }).join(',') + '}';
   }
-  prog='';if(todo.length){B().persist();saveM()}
-  if(big)B().toast('warn',tx('err').split('.')[0],tx('photo_big'));
-  for(var tk in T){
-    var m=mt(tk),t=tb(tk),by={},rows=[],snap=[];
-    (S[tk]||[]).forEach(function(x){if(x&&x.id!=null)by[String(x.id)]=x});
-    Object.keys(m).forEach(function(id){if(m[id].d&&by[id]){rows.push({user_id:uid,id:id,data:core(by[id]),deleted:false,updated_at:iso(m[id].u)});snap.push([id,m[id].h,0])}});
-    Object.keys(t).forEach(function(id){rows.push({user_id:uid,id:id,data:{},deleted:true,updated_at:iso(t[id].u)});snap.push([id,t[id].u,1])});
-    for(var o=0;o<rows.length;o+=200){
-      var r=await sb.from(T[tk]).upsert(rows.slice(o,o+200),{onConflict:'user_id,id'});if(r.error)throw r.error;
-      snap.slice(o,o+200).forEach(function(s){
-        if(s[2]){if(t[s[0]]&&t[s[0]].u===s[1])delete t[s[0]]}
-        else if(m[s[0]]&&m[s[0]].h===s[1])m[s[0]].d=0;
+  function hash(s) { /* cyrb53 */
+    var h1 = 0xdeadbeef, h2 = 0x41c6ce57, c;
+    for (var i = 0; i < s.length; i++) { c = s.charCodeAt(i); h1 = Math.imul(h1 ^ c, 2654435761); h2 = Math.imul(h2 ^ c, 1597334677); }
+    h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+    h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+    return (4294967296 * (2097151 & h2) + (h1 >>> 0)).toString(36);
+  }
+  function tsKey(t) { return String(t || '').replace(/(\.\d+)/, function (m) { return (m + '000000').slice(0, 7); }); } /* fração com 6 dígitos p/ comparar texto */
+  function newMeta() { return { v: 1, uid: '', cursor: '', items: {}, last: 0 }; }
+  function loadMeta() {
+    try { var m = JSON.parse(localStorage.getItem(META_KEY)); if (m && m.v === 1 && m.items && typeof m.items === 'object') return m; } catch (e) {}
+    return newMeta();
+  }
+  function saveMeta() { try { localStorage.setItem(META_KEY, JSON.stringify(meta)); } catch (e) {} }
+  function friendly(e) {
+    var m = String((e && (e.message || e.error_description)) || e || '');
+    if (/invalid login|invalid credentials/i.test(m)) return T('e_cred');
+    if (/already (been )?registered|already exists/i.test(m)) return T('e_exists');
+    if (/failed to fetch|network|load failed|offline/i.test(m)) return T('e_net');
+    if (/rate limit|too many|over_.*limit/i.test(m)) return T('e_rate');
+    return T('e_gen');
+  }
+  function rerender() { try { B() && B().renderAccount && B().renderAccount(); } catch (e) {} }
+  function setMsg(k, t) { msg = { k: k, t: t || '' }; rerender(); }
+
+  /* ---------- estado local -> itens e preferências ---------- */
+  function collect() {
+    var b = B(), S = b.S(), m = {};
+    KINDS.forEach(function (k) {
+      (S[k] || []).forEach(function (x) {
+        if (!x || x.id == null) return;
+        if (k === 'expenses' && b.isSeed(x)) return; /* exemplos do app não vão para a nuvem */
+        m[k + '|' + x.id] = { kind: k, id: String(x.id), data: x, h: hash(ss(x)) };
       });
-      saveM();
+    });
+    return m;
+  }
+  function prefsFrom(x) {
+    x = x || {};
+    return { salary: isFinite(x.salary) ? +x.salary : 0, va: isFinite(x.va) ? +x.va : 0, limit: isFinite(x.limit) ? +x.limit : 70,
+      warn: isFinite(x.warn) ? +x.warn : 60, budgets: x.budgets && typeof x.budgets === 'object' ? x.budgets : {} };
+  }
+  function prefsNow() { return prefsFrom(B().S()); }
+  function prefsDefault(p) { return !p.salary && !p.va && !Object.keys(p.budgets).length; }
+
+  /* ---------- biblioteca e cliente ---------- */
+  function loadLib() {
+    if (window.supabase && window.supabase.createClient) return Promise.resolve();
+    if (libP) return libP;
+    libP = new Promise(function (res, rej) {
+      var s = document.createElement('script');
+      s.src = CFG.lib; s.async = true; s.crossOrigin = 'anonymous';
+      s.onload = function () { res(); };
+      s.onerror = function () { libP = null; rej(new Error('network')); };
+      document.head.appendChild(s);
+    });
+    return libP;
+  }
+  function ensure() {
+    if (client) return Promise.resolve(client);
+    if (!configured()) return Promise.reject(new Error('not configured'));
+    return loadLib().then(function () {
+      client = window.supabase.createClient(CFG.url, CFG.key, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false } });
+      client.auth.onAuthStateChange(function (ev, s) { /* sem await aqui dentro (evita travar a biblioteca) */
+        session = s || null;
+        setTimeout(rerender, 0);
+      });
+      return client;
+    });
+  }
+
+  /* ---------- sincronização ---------- */
+  async function pull() {
+    var b = B(), rows = [], page = 0, from = meta.cursor || '1970-01-01T00:00:00Z', maxTs = meta.cursor || '';
+    for (;;) {
+      var r = await client.from('ec_items').select('kind,id,data,deleted,updated_at').gte('updated_at', from)
+        .order('updated_at', { ascending: true }).order('id', { ascending: true }).range(page * 1000, page * 1000 + 999);
+      if (r.error) throw r.error;
+      rows = rows.concat(r.data || []);
+      if (!r.data || r.data.length < 1000) break;
+      page++;
+    }
+    var S = b.S(), cur = collect(), touched = [], changed = false;
+    if (rows.some(function (x) { return !x.deleted; }) && S.sample && !b.hasUserData()) { b.dropSeed(); cur = collect(); changed = true; }
+    rows.forEach(function (r) {
+      if (tsKey(r.updated_at) > tsKey(maxTs)) maxTs = r.updated_at;
+      var arr = S[r.kind]; if (!Array.isArray(arr)) return;
+      var key = r.kind + '|' + r.id, loc = cur[key], mh = meta.items[key];
+      if (r.deleted) {
+        if (loc && mh !== undefined && loc.h === mh) { /* sem mudança local: aplica a exclusão */
+          for (var i = arr.length - 1; i >= 0; i--) if (String(arr[i].id) === r.id) arr.splice(i, 1);
+          delete meta.items[key]; touched.push(key); changed = true;
+        } else if (!loc) { delete meta.items[key]; }
+        return; /* se houve mudança local depois, o local vence e será reenviado */
+      }
+      var d = r.data; if (!d || typeof d !== 'object' || Array.isArray(d)) return; d.id = r.id;
+      if (loc) {
+        if (mh === undefined) { if (hash(ss(d)) === loc.h) meta.items[key] = loc.h; return; } /* 1º contato: igual = ok; diferente = local vence */
+        if (loc.h !== mh) return;                                                            /* mudou aqui: local vence */
+        if (hash(ss(d)) === loc.h) return;                                                   /* nada novo */
+        for (var j = 0; j < arr.length; j++) if (String(arr[j].id) === r.id) { arr[j] = d; break; }
+        touched.push(key); changed = true;
+      } else {
+        if (mh !== undefined) return;                                                        /* apagado aqui e ainda não enviado */
+        arr.push(d); touched.push(key); changed = true;
+      }
+    });
+    if (changed) {
+      b.normalize(); b.persist();
+      var after = collect();
+      touched.forEach(function (k) { if (after[k]) meta.items[k] = after[k].h; else delete meta.items[k]; });
+    }
+    var prefsChanged = false;
+    var pr = await client.from('ec_prefs').select('data,updated_at').maybeSingle();
+    if (pr.error) throw pr.error;
+    if (pr.data && pr.data.data && typeof pr.data.data === 'object') {
+      var local = prefsNow(), lh = hash(ss(local)), remote = prefsFrom(pr.data.data), rh = hash(ss(remote)), apply = false;
+      if (meta.prefs === undefined) { if (rh === lh) meta.prefs = lh; else apply = prefsDefault(local); }
+      else if (meta.prefs === lh && rh !== lh) apply = true;
+      if (apply) { b.applyPrefs(remote); b.persist(); meta.prefs = hash(ss(prefsNow())); prefsChanged = true; changed = true; }
+    }
+    if (maxTs) meta.cursor = maxTs;
+    saveMeta();
+    return { changed: changed, prefs: prefsChanged };
+  }
+
+  async function push() {
+    var cur = collect(), uid = session.user.id, ops = [];
+    Object.keys(cur).forEach(function (k) {
+      if (meta.items[k] !== cur[k].h) ops.push({ key: k, h: cur[k].h, row: { user_id: uid, kind: cur[k].kind, id: cur[k].id, data: cur[k].data, deleted: false } });
+    });
+    Object.keys(meta.items).forEach(function (k) {
+      if (!cur[k]) { var p = k.split('|'); ops.push({ key: k, del: true, row: { user_id: uid, kind: p[0], id: p.slice(1).join('|'), data: {}, deleted: true } }); }
+    });
+    for (var i = 0; i < ops.length; i += 200) {
+      var chunk = ops.slice(i, i + 200);
+      var r = await client.from('ec_items').upsert(chunk.map(function (o) { return o.row; }), { onConflict: 'user_id,kind,id' });
+      if (r.error) throw r.error;
+      chunk.forEach(function (o) { if (o.del) delete meta.items[o.key]; else meta.items[o.key] = o.h; });
+      saveMeta();
+    }
+    var p = prefsNow(), ph = hash(ss(p));
+    if (meta.prefs !== ph) {
+      var rp = await client.from('ec_prefs').upsert({ user_id: uid, data: p }, { onConflict: 'user_id' });
+      if (rp.error) throw rp.error;
+      meta.prefs = ph; saveMeta();
     }
   }
-  if(M.prefs&&M.prefs.d){
-    var ph=M.prefs.h,pr=await sb.from('profiles').upsert({user_id:uid,prefs:getPrefs(S),updated_at:iso(M.prefs.u)},{onConflict:'user_id'});if(pr.error)throw pr.error;
-    if(M.prefs.h===ph)M.prefs.d=0;
-  }
-}
 
-/* ---------- ciclo de sincronização, fila e nova tentativa ---------- */
-var sb=null,user=null,busy=false,again=false,timer,dT,rt,rmT,fails=0,status='',prog='',msg='',libFail=false,gateFor=null,coolUntil=0,sentTo='',emailVal='',codeVal='',working=false;
-async function run(first){
-  if(!sb||!user||!B()||M.owner!==user.id)return;
-  if(busy){again=true;return}
-  clearTimeout(rt);
-  if(navigator.onLine===false){status='offline';render();return}
-  busy=true;again=false;status='syncing';render();
-  try{
-    diff();await pull();await push();await flushRm();await renewPhotos();
-    M.synced=true;M.last=Date.now();fails=0;status='ok';saveM();
-  }catch(e){
-    console.error('sync',e);fails++;status=navigator.onLine===false?'offline':'err';
-    var d=Math.min(300000,4000*Math.pow(2,Math.min(fails,7)))*(0.8+Math.random()*0.4);
-    rt=setTimeout(function(){run(false)},d);
+  function sync() {
+    if (running) return running;
+    if (!client || !session) return Promise.resolve(false);
+    if (navigator.onLine === false) { setMsg('', T('pending')); return Promise.reject(new Error('offline')); }
+    lastTry = Date.now();
+    running = (async function () {
+      var res = await pull();
+      await push();
+      meta.last = Date.now(); saveMeta();
+      if (res.changed) { var b = B(); b.afterMerge(res.prefs ? prefsNow() : null); b.renderSt(); }
+      msg = { k: 'ok', t: T('synced') };
+      rerender();
+      return true;
+    })().catch(function (e) { msg = { k: 'err', t: friendly(e) }; rerender(); throw e; })
+      .finally(function () { running = null; });
+    return running;
   }
-  busy=false;render();if(B()){B().renderAccount();try{B().renderSt()}catch(x){}}
-  if(again){again=false;schedule(800)}
-}
-/* o diff carimba a hora da EDIÇÃO (não a da reconexão): roda 300 ms depois de cada gravação, mesmo offline */
-function schedule(ms){if(!user)return;clearTimeout(dT);dT=setTimeout(function(){try{diff()}catch(e){console.error(e)}},300);clearTimeout(timer);timer=setTimeout(function(){run(false)},ms||2500)}
+  function syncQuiet() { return sync().catch(function () {}); }
 
-/* ---------- login ---------- */
-function redir(){return location.origin+location.pathname}
-function wipe(){M=blank();saveM();B().reset()}
-async function onUser(u){
-  if(!u){user=null;gateFor=null;render();B()&&B().renderAccount();return}
-  if(user&&user.id===u.id){user=u;return}
-  if(gateFor===u.id)return;gateFor=u.id;
-  if(M.owner&&M.owner!==u.id){
-    if(!window.confirm(tx('swc'))){gateFor=null;try{await sb.auth.signOut()}catch(e){}user=null;render();return}
-    wipe();
+  /* ---------- ações de conta ---------- */
+  async function afterSignedIn() {
+    var uid = session.user.id;
+    if (meta.uid && meta.uid !== uid) { B().reset(); meta = newMeta(); } /* outra conta neste aparelho: limpa os dados da anterior */
+    meta.uid = uid; saveMeta();
+    await syncQuiet();
   }
-  if(!M.owner){M.owner=u.id;saveM()}
-  user=u;msg='';sentTo='';codeVal='';render();B().renderAccount();
-  try{if(location.search.indexOf('code=')>-1||location.hash.indexOf('access_token')>-1)history.replaceState(null,'',location.pathname)}catch(e){}
-  run(true);
-}
-async function signOut(){
-  if(pending()>0){await run(false);var n=pending();if(n>0&&!window.confirm(tx('outp',{n:n})))return}
-  try{await sb.auth.signOut()}catch(e){}
-  user=null;gateFor=null;msg='';status='';render();B().renderAccount();
-}
-function validEmail(v){return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v)&&v.length<255}
+  function creds() {
+    var el = document.getElementById('ecCloud');
+    var e = el && el.querySelector('#ecEmail'), p = el && el.querySelector('#ecPass');
+    var em = e ? e.value.trim() : '', pw = p ? p.value : '';
+    if (!/^\S+@\S+\.\S+$/.test(em) || pw.length < 8) { setMsg('err', T('e_fill')); return null; }
+    return { email: em, password: pw };
+  }
+  async function signIn() {
+    var c = creds(); if (!c) return;
+    setMsg('', T('loading'));
+    try {
+      await ensure();
+      var r = await client.auth.signInWithPassword(c);
+      if (r.error) throw r.error;
+      session = r.data.session; msg = { k: '', t: '' };
+      await afterSignedIn(); rerender();
+    } catch (e) { setMsg('err', friendly(e)); }
+  }
+  async function signUp() {
+    var c = creds(); if (!c) return;
+    setMsg('', T('loading'));
+    try {
+      await ensure();
+      var r = await client.auth.signUp(c);
+      if (r.error) throw r.error;
+      if (r.data && r.data.session) { session = r.data.session; msg = { k: '', t: '' }; await afterSignedIn(); rerender(); }
+      else setMsg('ok', T('confirm_mail'));
+    } catch (e) { setMsg('err', friendly(e)); }
+  }
+  async function signOut() {
+    if (!confirm(T('out_confirm'))) return;
+    setMsg('', T('syncing'));
+    try { await sync(); }
+    catch (e) { if (!confirm(T('out_unsynced'))) { setMsg('err', friendly(e)); return; } }
+    try { await client.auth.signOut(); } catch (e) {}
+    session = null; meta = newMeta(); saveMeta(); msg = { k: '', t: '' };
+    B().reset(); rerender();
+  }
+  function delAccount() {
+    var b = B(), em = session && session.user && session.user.email;
+    b.strongConfirm({
+      title: T('del_t'), body: T('del_b'), word: T('del_w'), email: em, typeLbl: T('del_type'), btn: T('del_go'), retry: T('del_retry'), cancel: T('cancel'),
+      run: async function () {
+        var r = await client.rpc('ec_delete_account');
+        if (r.error) throw new Error(friendly(r.error));
+        try { await client.auth.signOut(); } catch (e) {}
+        session = null; meta = newMeta(); saveMeta(); msg = { k: '', t: '' };
+        b.reset(); rerender();
+      }
+    });
+  }
 
-/* ---------- interface (dentro do cartão #ecCloud, no menu Conta) ---------- */
-var box;
-function when(){try{return new Date(M.last).toLocaleTimeString(B()&&B().locale())}catch(e){return ''}}
-function render(){
-  if(!box)box=document.getElementById('ecCloud');if(!box)return;
-  var h='<h3>'+esc(tx('t'))+'</h3>';
-  if(!configured())h+='<p class="sub">'+esc(tx('off'))+'</p>';
-  else if(libFail)h+='<p class="sub">'+esc(tx('nolib'))+'</p>';
-  else if(!sb)h+='<p class="sub">'+esc(tx('loading'))+'</p>';
-  else if(user){
-    var n=pending(),line=status==='syncing'?(prog||tx('syncing')):status==='err'?tx('err'):status==='offline'?tx('offline'):(M.last?tx('ok')+' · '+when():'');
-    h+='<p class="sub">'+esc(tx('as'))+' <b>'+esc(user.email||'')+'</b></p><p class="g-msg" role="status">'+esc(line)+'</p>'+
-      (n>0?'<p class="g-msg">'+esc(tx('pend',{n:n}))+'</p>':'')+
-      '<div class="btns" style="margin-top:12px"><button class="btn" type="button" id="ecNow"'+(busy?' disabled':'')+'>'+esc(tx('now'))+'</button><button class="btn ghost" type="button" id="ecOut">'+esc(tx('out'))+'</button></div>';
-  }else{
-    h+='<p class="sub">'+esc(tx('sub'))+'</p><div style="display:grid;gap:10px;margin-top:12px">'+
-      '<button class="gbtn" type="button" id="ecG"'+(working?' disabled':'')+'>'+(B()&&B().glogo?B().glogo():'')+'<span>'+esc(tx('g'))+'</span></button>'+
-      '<label class="sub" for="ecE" style="margin:4px 0 -4px">E-mail</label>'+
-      '<input class="input" id="ecE" type="email" inputmode="email" autocomplete="email" maxlength="254" placeholder="'+esc(tx('em'))+'" value="'+esc(emailVal)+'">'+
-      '<button class="btn ghost" type="button" id="ecM"'+(working?' disabled':'')+'>'+esc(tx('m'))+'</button>'+
-      (sentTo?'<label class="sub" for="ecC" style="margin:4px 0 -4px">'+esc(tx('code'))+'</label><input class="input" id="ecC" inputmode="numeric" autocomplete="one-time-code" maxlength="10" pattern="[0-9]*" value="'+esc(codeVal)+'"><button class="btn" type="button" id="ecV"'+(working?' disabled':'')+'>'+esc(tx('ver'))+'</button>':'')+'</div>';
+  /* ---------- tela (cartão #ecCloud na aba Conta) ---------- */
+  function stamp(ms) { try { return new Date(ms).toLocaleString(B().locale(), { dateStyle: 'short', timeStyle: 'short' }); } catch (e) { return new Date(ms).toLocaleString(); } }
+  function render() {
+    var el = document.getElementById('ecCloud'); if (!el) return;
+    var keepE = el.querySelector('#ecEmail'), keepP = el.querySelector('#ecPass');
+    var ev = keepE ? keepE.value : '', pv = keepP ? keepP.value : '';
+    var m = msg.t ? '<p class="g-msg" role="status"' + (msg.k === 'err' ? ' style="color:var(--bad);font-weight:600"' : '') + '>' + esc(msg.t) + '</p>' : '';
+    var h = '<h3>' + esc(T('title')) + '</h3>';
+    if (!configured()) {
+      h += '<p class="sub">' + esc(T('nocfg')) + '</p>';
+    } else if (session && session.user) {
+      h += '<p class="sub">' + esc(T('as')) + ' <b>' + esc(session.user.email || '') + '</b></p>' +
+        '<div class="rowline" style="margin-top:10px"><span class="sub">' + esc(T('last')) + '</span><b>' + esc(meta && meta.last ? stamp(meta.last) : T('never')) + '</b></div>' + m +
+        '<div class="btns" style="margin-top:12px"><button class="btn" type="button" data-ecact="now">' + esc(T('now')) + '</button>' +
+        '<button class="btn ghost" type="button" data-ecact="out">' + esc(T('out')) + '</button></div>' +
+        '<div class="btns" style="margin-top:10px"><button class="btn ghost" type="button" data-ecact="del" style="color:var(--bad)">' + esc(T('del')) + '</button></div>';
+    } else {
+      h += '<p class="sub">' + esc(T('sub')) + '</p>' +
+        '<div class="field" style="margin-top:12px"><label for="ecEmail">' + esc(T('email')) + '</label><input class="input" id="ecEmail" type="email" inputmode="email" autocomplete="email" autocapitalize="off" spellcheck="false"></div>' +
+        '<div class="field" style="margin-top:10px"><label for="ecPass">' + esc(T('pass')) + '</label><input class="input" id="ecPass" type="password" autocomplete="current-password" minlength="8"></div>' + m +
+        '<div class="btns" style="margin-top:12px"><button class="btn" type="button" data-ecact="in">' + esc(T('signin')) + '</button>' +
+        '<button class="btn ghost" type="button" data-ecact="up">' + esc(T('signup')) + '</button></div>';
+    }
+    el.innerHTML = h;
+    var e2 = el.querySelector('#ecEmail'), p2 = el.querySelector('#ecPass');
+    if (e2) e2.value = ev; if (p2) p2.value = pv;
   }
-  if(msg)h+='<p class="g-msg" role="status">'+esc(msg)+'</p>';
-  box.innerHTML=h;
-  var q=function(i){return box.querySelector(i)},g=q('#ecG'),m=q('#ecM'),v=q('#ecV'),o=q('#ecOut'),nw=q('#ecNow'),e=q('#ecE'),c=q('#ecC');
-  if(e)e.oninput=function(){emailVal=this.value};if(c)c.oninput=function(){codeVal=this.value};
-  if(g)g.onclick=async function(){working=true;render();var r=await sb.auth.signInWithOAuth({provider:'google',options:{redirectTo:redir()}});if(r.error){working=false;msg=tx('err');render()}};
-  if(m)m.onclick=async function(){
-    var em=(q('#ecE').value||'').trim();emailVal=em;
-    if(!validEmail(em)){msg=tx('bad_email');render();return}
-    if(Date.now()<coolUntil){msg=tx('wait',{s:Math.ceil((coolUntil-Date.now())/1000)});render();return}
-    working=true;msg='';render();
-    var r=await sb.auth.signInWithOtp({email:em,options:{shouldCreateUser:true,emailRedirectTo:redir()}});
-    working=false;if(r.error){msg=tx('err')+(r.error.status===429?' (429)':'');render();return}
-    coolUntil=Date.now()+60000;sentTo=em;msg=tx('sent');render();
+
+  function wireUi() {
+    var el = document.getElementById('ecCloud'); if (!el) return;
+    el.addEventListener('click', function (ev) {
+      var t = ev.target.closest && ev.target.closest('[data-ecact]'); if (!t) return;
+      var a = t.getAttribute('data-ecact');
+      if (a === 'in') signIn(); else if (a === 'up') signUp();
+      else if (a === 'now') { setMsg('', T('syncing')); syncQuiet(); }
+      else if (a === 'out') signOut(); else if (a === 'del') delAccount();
+    });
+    el.addEventListener('keydown', function (ev) {
+      if (ev.key === 'Enter' && ev.target && (ev.target.id === 'ecEmail' || ev.target.id === 'ecPass')) { ev.preventDefault(); signIn(); }
+    });
+  }
+
+  /* ---------- API usada pelo index.html ---------- */
+  window.ECSync = {
+    schedule: function () { if (!session) return; clearTimeout(timer); timer = setTimeout(syncQuiet, 2500); },
+    summary: function () { return session && session.user ? (session.user.email || '') : ''; },
+    lastSync: function () { return meta && meta.last ? meta.last : 0; },
+    render: render,
+    sync: function () { return syncQuiet(); }
   };
-  if(v)v.onclick=async function(){
-    var cd=(q('#ecC').value||'').replace(/\s+/g,'');codeVal=cd;
-    if(!/^\d{4,10}$/.test(cd)){msg=tx('bad_code');render();return}
-    working=true;msg='';render();
-    var r=await sb.auth.verifyOtp({email:sentTo,token:cd,type:'email'});
-    working=false;if(r.error){msg=tx('bad_code');render()} /* sucesso: onAuthStateChange cuida do resto */
-  };
-  if(o)o.onclick=signOut;if(nw)nw.onclick=function(){run(false)};
-}
 
-/* ---------- início ---------- */
-function loadLib(cb){
-  if(window.supabase&&window.supabase.createClient)return cb(true);
-  var i=0;(function next(){
-    if(i>=LIB.length)return cb(false);
-    var s=document.createElement('script');s.src=LIB[i++];s.async=true;
-    s.onload=function(){if(window.supabase&&window.supabase.createClient)cb(true);else{s.remove();next()}};
-    s.onerror=function(){s.remove();next()};document.head.appendChild(s);
-  })();
-}
-function init(){
-  sb=window.supabase.createClient(CFG.url,CFG.key,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true,flowType:'pkce'}});
-  sb.auth.onAuthStateChange(function(ev,s){onUser(s&&s.user)});
-  sb.auth.getSession().then(function(r){onUser(r.data.session&&r.data.session.user)});
-  render();
-}
-function boot(){
-  box=document.getElementById('ecCloud');render();
-  if(!configured())return;
-  loadLib(function(ok){if(!ok){libFail=true;render();return}init()});
-}
-window.addEventListener('online',function(){if(!sb&&configured()&&libFail){libFail=false;render();loadLib(function(ok){if(!ok){libFail=true;render();return}init()});return}fails=0;if(user)run(false)});
-window.addEventListener('offline',function(){if(user){status='offline';render()}});
-document.addEventListener('visibilitychange',function(){if(document.hidden&&user){try{diff()}catch(e){}}if(!document.hidden&&user&&(pending()>0||Date.now()-M.last>300000))run(false)});
-setInterval(function(){if(user&&!document.hidden)run(false)},900000); /* busca mudanças de outros aparelhos a cada 15 min */
-window.ECSync={schedule:schedule,config:CFG,render:render,summary:function(){return user?user.email||'':''},syncNow:function(){return run(false)}};
-if(window.__EC_TEST__)window.ECSync._t={M:function(){return M},setM:function(m){M=m},diff:diff,mergeRows:mergeRows,pull:pull,push:push,run:run,flushRm:flushRm,renewPhotos:renewPhotos,upPhoto:upPhoto,hashItem:hashItem,pending:pending,onUser:onUser,wipe:wipe,
-  inject:function(s,u){sb=s;user=u},sane:sane};
-window.addEventListener('load',boot);
+  function hasStoredSession() {
+    try { for (var i = 0; i < localStorage.length; i++) { if (/^sb-.*-auth-token$/.test(localStorage.key(i))) return true; } } catch (e) {}
+    return false;
+  }
+  function init() {
+    if (started) return; started = true;
+    meta = loadMeta(); wireUi(); render();
+    if (!configured() || !hasStoredSession()) return;
+    ensure().then(function () { return client.auth.getSession(); }).then(function (r) {
+      session = r && r.data ? r.data.session : null;
+      if (session) { if (!meta.uid) { meta.uid = session.user.id; saveMeta(); } rerender(); syncQuiet(); }
+    }).catch(function () {});
+  }
+  window.addEventListener('online', function () { if (session) syncQuiet(); });
+  document.addEventListener('visibilitychange', function () {
+    if (!session) return;
+    if (document.hidden) { clearTimeout(timer); syncQuiet(); }
+    else if (Date.now() - lastTry > 30000) syncQuiet();
+  });
+  meta = loadMeta();
+  setTimeout(init, 1200); /* depois do boot do app */
 })();
