@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-44e0g2flvlyzN1sbarSyf9aFKTOSEhu7vlRGRt+DzoU=' 'sha256-s3I+BzVLzvLWkTz7NejtTaJytbFscKGbzgFAlMEWBUk=' https://cdn.jsdelivr.net https://accounts.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob:; media-src 'self' blob: data:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://www.googleapis.com https://accounts.google.com; frame-src https://accounts.google.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-PZuxUHEDDdNK6pBJ4jfOf6F7rLEIeqqrKcRRvNXjCk4=' 'sha256-s3I+BzVLzvLWkTz7NejtTaJytbFscKGbzgFAlMEWBUk=' https://accounts.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob:; media-src 'self' blob: data:; connect-src 'self' https://www.googleapis.com https://accounts.google.com; frame-src https://accounts.google.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="referrer" content="no-referrer">
 <title>Expense Control</title>
@@ -156,6 +156,7 @@ h2.sec{font-family:var(--font-display);font-weight:800;font-size:18px;margin:24p
 .legal-links{text-align:center}.legal-links a{color:var(--accent);font-weight:600}
 .zone{margin-top:20px;padding-top:14px;border-top:1px solid color-mix(in srgb,var(--bad) 45%,var(--line))}
 .zone h4{margin:0 0 4px;font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--bad)}
+.sheet.over{z-index:50} /* janela de baixo aberta por cima do menu lateral (ex.: login do backup) */
 .sconf{position:absolute;inset:0;z-index:70;display:flex;align-items:flex-end}
 .sconf .g-msg.err{color:var(--bad);font-weight:600}
 .btn:disabled{opacity:.45;cursor:default}
@@ -433,6 +434,7 @@ input[type=range]{width:100%;accent-color:var(--accent);margin:10px 0 2px;height
 .d-body>*{animation:dfade .22s ease}
 @keyframes dfade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 
+#gLegacy{display:none!important} /* o backup antigo do Drive agora é importado sozinho pela sincronização */
 /* tema com foto */
 .bg-img,.bg-dim{position:fixed;inset:0;z-index:-1;display:none;pointer-events:none}
 .bg-img{background:center/cover no-repeat}
@@ -621,7 +623,7 @@ html.has-bg .top,html.has-bg h2.sec,html.has-bg .sub,html.has-bg .hint,html.has-
           <input class="input set-q" id="setQ" type="search" autocomplete="off" enterkeyhint="search" data-i18n-ph="set_q" data-i18n-aria="set_q" aria-label="Buscar nas configurações">
           <p class="set-h" data-i18n="set_g_acc"></p>
           <div class="set-list">
-            <button class="set-row" type="button" data-dopen="account" data-kw="login entrar nuvem sync sincronizar excluir conta cloud email google"><span class="ico c-blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg></span><span class="set-t"><span data-i18n="m_account"></span><small id="accSum"></small></span><svg class="go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
+            <button class="set-row" type="button" data-dopen="account" data-kw="backup copia login entrar nuvem sync sincronizar excluir conta cloud email google drive"><span class="ico c-blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg></span><span class="set-t"><span data-i18n="m_account"></span><small id="accSum"></small></span><svg class="go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
             <button class="set-row" type="button" data-dopen="security" data-kw="pin senha biometria bloqueio lock password seguranca"><span class="ico c-green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></span><span class="set-t"><span data-i18n="m_sec"></span><small id="secSum"></small></span><svg class="go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
           </div>
           <p class="set-h" data-i18n="set_g_cust"></p>
@@ -708,7 +710,7 @@ html.has-bg .top,html.has-bg h2.sec,html.has-bg .sub,html.has-bg .hint,html.has-
         <section class="d-view" id="dv-account" hidden>
           <div class="d-vhead"><button class="back" type="button" data-dback><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg><span></span></button></div>
           <h2 class="sec" data-i18n="m_account">Conta</h2>
-          <div class="card" id="ecCloud"></div>
+          <div id="ecCloud"></div>
           <p class="note legal-links"><a href="privacy.html" data-i18n="m_priv"></a> · <a href="terms.html" data-i18n="m_terms"></a></p>
           <div class="card" id="gLegacy" hidden><h3 data-i18n="g_title"></h3><p class="sub" data-i18n="g_sub"></p><div id="gBody"></div></div>
         </section>
@@ -900,7 +902,8 @@ var D={
   ab_1:"Funciona offline|Works offline|Funciona sin conexión", ab_1s:"Abra e registre gastos mesmo sem internet.|Open the app and log expenses even without internet.|Abre la app y registra gastos incluso sin internet.",
   ab_2:"Seus dados são seus|Your data is yours|Tus datos son tuyos", ab_2s:"Ficam neste aparelho. A conta na nuvem é opcional e sincroniza seus aparelhos.|They stay on this device. The cloud account is optional and syncs your devices.|Quedan en este dispositivo. La cuenta en la nube es opcional y sincroniza tus dispositivos.",
   ab_3:"Sem comprovantes|No receipts|Sin comprobantes", ab_3s:"Por segurança, o app não guarda fotos nem imagens de pagamentos.|For safety, the app does not store payment photos or images.|Por seguridad, la app no guarda fotos ni imágenes de pagos.",
-  m_account:"Conta|Account|Cuenta", set_general:"Geral|General|General",
+  m_account:"Backup|Backup|Copia de seguridad", set_general:"Geral|General|General",
+  bk_nofile:"O backup só funciona com o app publicado num endereço https e com o arquivo google-sync.js junto. Parece que o index.html foi aberto direto do aparelho. Seus gastos continuam salvos aqui normalmente.|Backup only works with the app published at an https address and with google-sync.js alongside. It looks like index.html was opened straight from the device. Your expenses are still saved here as usual.|La copia solo funciona con la app publicada en una dirección https y con el archivo google-sync.js al lado. Parece que index.html se abrió directo del dispositivo. Tus gastos siguen guardados aquí con normalidad.",
   g_off:"Não conectado|Not connected|No conectado", g_err_t:"Backup não concluído|Backup not completed|Copia no completada",
   m_theme:"Tema|Theme|Tema", m_song:"Música|Music|Música", m_settings:"Configurações|Settings|Ajustes", m_lang:"Idiomas|Language|Idioma",
   back_menu:"Menu|Menu|Menú", back_settings:"Configurações|Settings|Ajustes",
@@ -1688,7 +1691,7 @@ function checkAlerts(){
 /* ---------- folhas ---------- */
 var ctx=null;
 function openSheet(html){$('#sheetBody').innerHTML=html;$('#sheet').hidden=false;$('#panel').scrollTop=0;$('#panel').focus({preventScroll:true})}
-function closeSheet(){$('#sheet').hidden=true;ctx=null}
+function closeSheet(){$('#sheet').hidden=true;$('#sheet').classList.remove('over');ctx=null}
 function sheetHead(title,color){return '<div class="sh-head"'+(color?' style="--c:'+color+'"':'')+'>'+(color?'<span class="sh-dot"></span>':'')+'<h2 class="sh-title" id="shTitle">'+esc(title)+'</h2><button class="sh-close" type="button" data-close aria-label="'+L('close')+'">×</button></div>'}
 function openCat(month,cat,sub){
   var list=ofMonth(month).filter(function(e){return e.cat===cat&&(!sub||e.sub===sub)}).sort(function(a,b){return b.ts.localeCompare(a.ts)});
@@ -2861,7 +2864,7 @@ $('#devWipe').addEventListener('click',function(){
     run:async function(){wipeDevice();setTimeout(function(){location.reload()},150)}});
 });
 
-/* ---------- ponte p/ sincronização na nuvem (supabase-sync.js lê/escreve o estado só por aqui) ---------- */
+/* ---------- ponte p/ sincronização na nuvem (google-sync.js lê/escreve o estado só por aqui) ---------- */
 window.ECBridge={
   S:function(){return S},lang:function(){return lang},locale:function(){return LOC[lang]},glogo:function(){return GLOGO},
   hasUserData:function(){return userHasData()},
@@ -2877,6 +2880,7 @@ window.ECBridge={
   afterMerge:function(prefs){if(prefs){setMoney($('#salary'),S.salary);setMoney($('#va'),S.va);renderHello()}refresh();checkAlerts()},
   refresh:function(){refresh()},renderSt:function(){renderSt()},renderAccount:function(){renderGoogle()},
   toast:function(k,t,m){toast(k,t,m)},strongConfirm:strongConfirm,
+  openSheet:function(h){openSheet(h);$('#sheet').classList.toggle('over',!$('#drawer').hidden)},closeSheet:function(){closeSheet()},sheetHead:function(t){return sheetHead(t)},
   reset:function(){ /* troca de conta: apaga dados locais da conta anterior (aparelho fica limpo) */
     S=migrate({expenses:[],salary:0,va:0,limit:70,warn:60,lang:lang});
     try{localStorage.removeItem(GK)}catch(e){}
@@ -2893,6 +2897,7 @@ function boot(){
   try{localStorage.removeItem('cifrao-avatar-v1');localStorage.removeItem('cifrao-bg-v1')}catch(e){}
   genRecurring();genInst();rollover();
   bgInit();applyLang();setIdx(0);checkAlerts();
+  setTimeout(function(){if(!window.ECSync){var c=$('#ecCloud');if(c&&!c.firstChild)c.innerHTML='<p class="sub" role="status">'+L('bk_nofile')+'</p>'}},2500);
   gatesInit();
   gAuto();
   if(PH_PURGED>0){var pn=PH_PURGED;PH_PURGED=0;save();toast('info',L('ph_gone_t'),L('ph_gone_m',{n:pn}))}
@@ -2915,7 +2920,7 @@ try{Promise.race([document.fonts.ready,new Promise(function(r){setTimeout(r,450)
 })();
 </script>
 
-<script src="supabase-sync.js" defer></script>
+<script src="google-sync.js" defer></script>
 <script>
 if('serviceWorker' in navigator && /^https?:$/.test(location.protocol)){window.addEventListener('load',function(){try{navigator.serviceWorker.register('sw.js')}catch(e){}})}
 </script>

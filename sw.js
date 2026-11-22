@@ -1,6 +1,6 @@
-/* Expense Control — service worker: abre offline; nunca guarda respostas de outros sites (Supabase, Google). */
-var CACHE='ec-shell-v3.4';
-var SHELL=['./','index.html','supabase-sync.js','manifest.webmanifest','icon-192.png','icon-512.png','apple-touch-icon.png','privacy.html','terms.html'];
+/* Expense Control — service worker: abre offline; nunca guarda respostas de outros sites (Google). */
+var CACHE='ec-shell-v3.7';
+var SHELL=['./','index.html','google-sync.js','manifest.webmanifest','icon-192.png','icon-512.png','apple-touch-icon.png','privacy.html','terms.html'];
 
 self.addEventListener('install',function(e){
   e.waitUntil(caches.open(CACHE).then(function(c){return c.addAll(SHELL)}).then(function(){return self.skipWaiting()}));
@@ -12,7 +12,7 @@ self.addEventListener('activate',function(e){
 });
 self.addEventListener('fetch',function(e){
   var req=e.request,url=new URL(req.url);
-  if(req.method!=='GET'||url.origin!==self.location.origin)return; /* Supabase/Google/fontes: direto da rede, sem cache */
+  if(req.method!=='GET'||url.origin!==self.location.origin)return; /* Google/fontes: direto da rede, sem cache */
   e.respondWith(
     fetch(req).then(function(res){
       if(res&&res.ok){var copy=res.clone();caches.open(CACHE).then(function(c){c.put(req,copy)})}

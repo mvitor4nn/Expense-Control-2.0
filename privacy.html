@@ -7,12 +7,12 @@
 <h2>Sem conta</h2>
 <p>Gastos, parcelas, recorrentes, receitas, metas, preferências, PIN e tema ficam apenas no armazenamento deste navegador/aparelho. Nada disso é enviado para servidor nenhum. Ao abrir o app, o navegador baixa as fontes (Sora e Inter) do Google Fonts, o que expõe seu endereço IP ao Google.</p>
 <h2>Com conta (opcional)</h2>
-<p>Se você criar uma conta, guardamos na nuvem (Supabase): seu e-mail, sua senha (o Supabase guarda apenas um hash, nós não temos acesso a ela), e os dados do app: gastos, parcelas, recorrentes, receitas, metas e preferências (salário, vale-alimentação, limites e orçamentos). Cada usuário só consegue ler e alterar as próprias linhas (controle de acesso por usuário no banco). O PIN e as configurações de tema e música não são enviados.</p>
-<p>Ao usar a conta, o navegador carrega a biblioteca do Supabase a partir do CDN jsDelivr.</p>
+<p>Se você entrar com o Google, o app guarda uma <b>cópia de segurança</b> dos seus dados (gastos, parcelas, recorrentes, receitas, metas e preferências como salário, vale-alimentação, limites e orçamentos) num arquivo na pasta privada do app dentro do <b>seu próprio Google Drive</b>, a cada 4 dias ou toda semana (você escolhe, ou desliga). Só o app consegue ler essa pasta. Nós não temos servidor nem banco de dados: não recebemos, não guardamos e não vemos seus dados nem sua senha do Google. O app só lê seu e-mail para mostrar em qual conta você está. O PIN, o tema, o papel de parede (foto) e a música não entram no backup: ficam só neste aparelho.</p>
+<p>Ao usar a conta, o navegador carrega o script de login do Google (accounts.google.com).</p>
 <h2>Importação do Google Drive (antiga)</h2>
 <p>Se você já usou o backup antigo no Google Drive, o app pode ler, uma única vez e só quando você pedir, o arquivo de backup na pasta privada do app no seu Drive. O app não envia mais nada para o Drive.</p>
 <h2>Seus controles</h2>
-<p><b>Sair</b> da conta: sincroniza e remove os dados deste aparelho (continuam na nuvem). <b>Excluir conta e dados da nuvem</b>: apaga para sempre a conta e tudo o que está na nuvem. <b>Apagar tudo deste aparelho</b> (Dados): limpa o que está guardado aqui. Você também pode exportar um backup em JSON.</p>
+<p><b>Desconectar</b>: para os backups; seus gastos continuam neste aparelho e o backup continua no seu Drive. <b>Apagar backup da nuvem</b>: apaga para sempre o arquivo de backup do seu Drive. <b>Apagar tudo deste aparelho</b> (Dados): limpa o que está guardado aqui. Você também pode exportar um arquivo JSON e revogar o acesso do app em myaccount.google.com/permissions.</p>
 <h2>Contato</h2>
 <p>Dúvidas ou pedidos sobre seus dados: <b>[coloque aqui o seu e-mail de contato]</b></p>
 </body></html>
