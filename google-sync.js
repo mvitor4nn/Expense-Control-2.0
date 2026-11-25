@@ -10,9 +10,18 @@
     clientId: '486699175294-laq31cssivlfp3k6jsdjk78bg7c01tss.apps.googleusercontent.com',
     file: 'expense-control-backup-v2.json',
     oldSync: 'expense-control-sync-v2.json', /* versão intermediária (sincronização): apagada junto ao apagar a nuvem */
+    prev: 'expense-control-backup-prev.json', /* cópia de segurança do backup da nuvem, guardada antes de sobrescrever com menos itens */
     legacy: 'expense-control-backup.json', /* backup antigo do Drive: importado automaticamente na 1ª sincronização */
     scope: 'https://www.googleapis.com/auth/drive.appdata https://www.googleapis.com/auth/userinfo.email'
   };
+
+  var PX = {
+    pt: { pick_t: 'Escolha o backup', pick_all: 'Importar todos (juntar)', pick_all_s: 'Junta os itens de todos os backups. Nada é apagado.', pick_n: '{n} itens', pick_ok: 'Importados {n} itens.' },
+    en: { pick_t: 'Choose a backup', pick_all: 'Import all (merge)', pick_all_s: 'Merges the items of every backup. Nothing is deleted.', pick_n: '{n} items', pick_ok: '{n} items imported.' },
+    es: { pick_t: 'Elige la copia', pick_all: 'Importar todas (unir)', pick_all_s: 'Une los elementos de todas las copias. No se borra nada.', pick_n: '{n} elementos', pick_ok: '{n} elementos importados.' }
+  };
+  function TP(k, v) { var t = (PX[lang()] || PX.pt)[k] || PX.pt[k] || k; if (v) for (var x in v) t = t.split('{' + x + '}').join(v[x]); return t; }
+  var pickList = [];
 
   var META_KEY = 'ec-sync-v3';           /* prefixo ec- : "Apagar tudo deste aparelho" já limpa */
   var KINDS = ['expenses', 'recurring', 'inst', 'incomes', 'goals'];
@@ -237,18 +246,69 @@
     });
     return { items: items, prefs: prefsFrom(st) };
   }
-  /* procura o backup: o novo; se não houver, o antigo do app. Devolve { items, prefs, ts } ou null */
-  async function findBackup() {
-    var f = null;
-    if (meta.fileId) {
-      try { var q = await api(DRIVE + '/' + meta.fileId + '?alt=media'); if (q && q.items) return pack(q); }
-      catch (e) { if (e.status !== 404) throw e; meta.fileId = ''; }
+  /* lê TODOS os arquivos da pasta do app (novo, intermediário, antigo, cópia de segurança), mais recente primeiro */
+  async function listBackups() {
+    var j = await api(DRIVE + '?spaces=appDataFolder&orderBy=' + encodeURIComponent('modifiedTime desc') + '&pageSize=100&fields=' + encodeURIComponent('files(id,name,modifiedTime)'));
+    var out = [];
+    for (var i = 0; i < (j.files || []).length; i++) {
+      var f = j.files[i];
+      if (f.name === CFG.file && !meta.fileId) meta.fileId = f.id;
+      try {
+        var p = await api(DRIVE + '/' + f.id + '?alt=media');
+        var bk = (p && p.items) ? pack(p, f.modifiedTime) : legacyOf(p);
+        if (!bk) continue;
+        bk.ts = bk.ts || Date.parse(f.modifiedTime) || 0;
+        bk.name = f.name; bk.n = Object.keys(bk.items).length;
+        if (bk.n) out.push(bk);
+      } catch (e) { if (e && e.message === 'needtap') throw e; }
     }
-    f = await findFile(CFG.file);
-    if (f) { meta.fileId = f.id; var p = await api(DRIVE + '/' + f.id + '?alt=media'); if (p && p.items) return pack(p, f.modifiedTime); }
-    var lf = await findFile(CFG.legacy);
-    if (lf) { var o = legacyOf(await api(DRIVE + '/' + lf.id + '?alt=media')); if (o && Object.keys(o.items).length) { o.ts = Date.parse(lf.modifiedTime) || 0; return o; } }
-    return null;
+    return out;
+  }
+  function mergeBackups(list) { /* o mais recente vence em caso de item repetido */
+    var items = {}, prefs = null, ts = 0;
+    list.forEach(function (bk) {
+      Object.keys(bk.items).forEach(function (k) { if (!items[k]) items[k] = bk.items[k]; });
+      if (!prefs && bk.prefs && !prefsDefault(prefsFrom(bk.prefs))) prefs = bk.prefs;
+      ts = Math.max(ts, bk.ts || 0);
+    });
+    return { items: items, prefs: prefs, ts: ts };
+  }
+  /* devolve { items, prefs, ts } juntando todos os backups com dados, ou null */
+  async function findBackup() {
+    var list = await listBackups();
+    return list.length ? mergeBackups(list) : null;
+  }
+  function openPicker(list) {
+    pickList = list;
+    sheet(B().sheetHead(TP('pick_t')) + '<div class="set-list" style="margin-top:8px">' +
+      row('data-ecpick="all"', TP('pick_all'), TP('pick_all_s')) +
+      list.map(function (bk, i) { return row('data-ecpick="' + i + '"', when(bk.ts) + ' · ' + TP('pick_n', { n: bk.n }), bk.name); }).join('') + '</div>');
+  }
+  function pickBackup(i) {
+    var bk = i === 'all' ? mergeBackups(pickList) : pickList[+i];
+    if (!bk) return;
+    sheetClose();
+    var n = applyRestore(bk); meta.hash = ''; saveMeta();
+    setMsg('ok', T('restored') + ' ' + TP('pick_ok', { n: n }));
+  }
+  /* grava arquivo na pasta do app (cria ou atualiza) */
+  async function putFile(name, id, body) {
+    if (id) { try { await api('https://www.googleapis.com/upload/drive/v3/files/' + id + '?uploadType=media', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: body }); return id; } catch (e) { if (e.status !== 404) throw e; } }
+    var bd = 'ecb' + Date.now().toString(36);
+    var mp = '--' + bd + '\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n' + JSON.stringify({ name: name, parents: ['appDataFolder'] }) +
+      '\r\n--' + bd + '\r\nContent-Type: application/json\r\n\r\n' + body + '\r\n--' + bd + '--';
+    var j = await api('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id', { method: 'POST', headers: { 'Content-Type': 'multipart/related; boundary=' + bd }, body: mp });
+    return j.id;
+  }
+  /* antes de sobrescrever a nuvem com MENOS itens do que ela já tem, guarda a versão atual numa cópia de segurança */
+  async function keepPrev(nLocal) {
+    if (!meta.fileId) return;
+    try {
+      var old = await api(DRIVE + '/' + meta.fileId + '?alt=media');
+      if (!old || !old.items || Object.keys(old.items).length <= nLocal) return;
+      var pf = await findFile(CFG.prev);
+      await putFile(CFG.prev, pf && pf.id, JSON.stringify(old));
+    } catch (e) { if (e && e.message === 'needtap') throw e; if (e && e.status === 404) return; throw e; }
   }
   function pack(p, mt) { return { items: (p.items && typeof p.items === 'object') ? p.items : {}, prefs: p.prefs || null, ts: +p.ts || Date.parse(mt) || 0 }; }
   async function upload(payload) {
@@ -277,6 +337,7 @@
   }
   async function doBackup() { /* o token já precisa estar válido */
     var sn = snapshot();
+    await keepPrev(Object.keys(sn.items).length);
     await upload({ v: 3, ts: Date.now(), items: sn.items, prefs: sn.prefs });
     meta.hash = sn.h; meta.last = Date.now(); saveMeta();
   }
@@ -317,8 +378,10 @@
     return guard(async function () {
       setMsg('', T('looking'));
       await requestToken();
-      var bk = await findBackup();
-      if (!bk) { setMsg('', T('none')); return false; }
+      var list = await listBackups();
+      if (!list.length) { setMsg('', T('none')); return false; }
+      if (list.length > 1) { setMsg('', ''); openPicker(list); return true; }
+      var bk = list[0];
       if (!confirm(T('restore_ask', { d: when(bk.ts) }))) { setMsg('', ''); return false; }
       applyRestore(bk); meta.hash = ''; saveMeta(); /* o que veio do backup passa a contar como "ainda não salvo" até o próximo backup */
       setMsg('ok', T('restored')); return true;
@@ -335,10 +398,12 @@
       if (meta.email !== em) { meta.email = em; meta.last = 0; meta.hash = ''; meta.fileId = ''; }
       saveMeta();
       setMsg('', T('looking'));
-      var bk = await findBackup();
-      if (bk) {
-        var has = B().hasUserData(), q = T('found', { d: when(bk.ts) }) + (has ? '\n\n' + T('found_keep') : '');
+      var list = await listBackups();
+      if (list.length > 1) { saveMeta(); setMsg('', ''); openPicker(list); return; }
+      if (list.length === 1) {
+        var bk = list[0], has = B().hasUserData(), q = T('found', { d: when(bk.ts) }) + (has ? '\n\n' + T('found_keep') : '');
         if (confirm(q)) { applyRestore(bk); meta.hash = ''; saveMeta(); setMsg('ok', T('restored')); return; }
+        setMsg('', ''); return; /* recusou: não envia nada agora, a nuvem fica intacta */
       }
       setMsg('', T('saving'));
       await doBackup();
@@ -357,7 +422,7 @@
       run: async function () {
         try {
           await requestToken();
-          var names = [CFG.file, CFG.oldSync, CFG.legacy];
+          var names = [CFG.file, CFG.oldSync, CFG.legacy, CFG.prev];
           for (var i = 0; i < names.length; i++) { var f = await findFile(names[i]); if (f) await api(DRIVE + '/' + f.id, { method: 'DELETE' }); }
         } catch (e) { throw new Error(friendly(e)); }
         try { if (tok && window.google && google.accounts) google.accounts.oauth2.revoke(tok, function () {}); } catch (e) {}
@@ -439,6 +504,8 @@
   }
   function wireUi() {
     document.addEventListener('click', function (ev) {
+      var pk = ev.target.closest && ev.target.closest('[data-ecpick]');
+      if (pk) { pickBackup(pk.getAttribute('data-ecpick')); return; }
       var f = ev.target.closest && ev.target.closest('[data-ecfreq]');
       if (f) { setFreq(f.getAttribute('data-ecfreq')); return; }
       var t = ev.target.closest && ev.target.closest('[data-ecact]'); if (!t) return;
