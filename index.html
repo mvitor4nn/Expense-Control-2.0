@@ -485,13 +485,21 @@ input[type=range]{width:100%;accent-color:var(--accent);margin:10px 0 2px;height
 /* tema com foto */
 .bg-img,.bg-dim{position:fixed;inset:0;z-index:-1;display:none;pointer-events:none}
 .bg-img{background:center/cover no-repeat}
-.bg-dim{background:#000;opacity:.45}
+.bg-dim{background:var(--dim,#000);opacity:.45}
 html.has-bg .bg-img,html.has-bg .bg-dim{display:block}
-html.has-bg:root{--bg:rgba(18,12,32,.7);--surface:rgba(20,14,36,.78);--surface2:rgba(255,255,255,.14);--ink:#fff;--muted:rgba(255,255,255,.88);--line:rgba(255,255,255,.2);--accent:#D6C8FF;--accent-ink:#0B0B12;--warn:#FFC766;--bad:#FF8FA3;--ok:#7FDDA5;color-scheme:dark}
+html.has-bg:root:not([data-theme="light"]){--bg:rgba(18,12,32,.7);--surface:rgba(20,14,36,.78);--surface2:rgba(255,255,255,.14);--ink:#fff;--muted:rgba(255,255,255,.88);--line:rgba(255,255,255,.2);--accent:#D6C8FF;--accent-ink:#0B0B12;--warn:#FFC766;--bad:#FF8FA3;--ok:#7FDDA5;color-scheme:dark}
 html.has-bg body{background:transparent}
 html.has-bg .card,html.has-bg .tabs,html.has-bg .kpi,html.has-bg .clist,html.has-bg .txl,html.has-bg .invcard,html.has-bg .stat,html.has-bg .iconbtn,html.has-bg .mn-b,html.has-bg .search,html.has-bg .segc{backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+html.has-bg:root[data-theme="light"]{--dim:#fff;--bg:rgba(244,243,249,.72);--surface:rgba(255,255,255,.84);--surface2:rgba(255,255,255,.72);--ink:#15112A;--muted:#45405F;--line:rgba(21,17,42,.14);--accent:#6D28D9;--accent-ink:#fff;--warn:#9A4509;--bad:#BE123C;--ok:#047857;--shadow:0 12px 30px rgba(60,20,120,.16);color-scheme:light}
 html.has-bg .panel,html.has-bg .toast,html.has-bg .d-panel{background:rgba(20,14,36,.96)}
 html.has-bg .tabs{background:rgba(20,14,36,.9)}
+html.has-bg:root[data-theme="light"] .panel,html.has-bg:root[data-theme="light"] .toast,html.has-bg:root[data-theme="light"] .d-panel{background:rgba(255,255,255,.97)}
+html.has-bg:root[data-theme="light"] .tabs{background:rgba(255,255,255,.92)}
+html.has-bg:root[data-theme="light"] .chip{background:rgba(255,255,255,.8)}
+html.has-bg:root[data-theme="light"] .top,html.has-bg:root[data-theme="light"] h2.sec,html.has-bg:root[data-theme="light"] .sub,html.has-bg:root[data-theme="light"] .hint,html.has-bg:root[data-theme="light"] .note,html.has-bg:root[data-theme="light"] .mn-t,html.has-bg:root[data-theme="light"] .dayh{text-shadow:none}
+html.has-bg:root[data-theme="light"] :is(.brand-txt,.mn-t,h2.sec,.page>.sub,.page>.note,.hint,.dayh,.plg>summary,.empty){color:#fff;text-shadow:0 1px 10px rgba(0,0,0,.65)}
+html.has-bg:root[data-theme="light"] .brand-txt .hello{color:rgba(255,255,255,.88)}
+html.has-bg:root[data-theme="light"] .empty{border-color:rgba(255,255,255,.35)}
 html.has-bg .chip{background:rgba(20,14,36,.78)}
 html.has-bg .top,html.has-bg h2.sec,html.has-bg .sub,html.has-bg .hint,html.has-bg .note,html.has-bg .mn-t,html.has-bg .dayh{text-shadow:0 1px 10px rgba(0,0,0,.65)}
 

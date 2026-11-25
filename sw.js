@@ -1,5 +1,5 @@
 /* Expense Control — service worker: abre offline; nunca guarda respostas de outros sites (Google). */
-var CACHE='ec-shell-v3.7';
+var CACHE='ec-shell-v3.8';
 var SHELL=['./','index.html','google-sync.js','manifest.webmanifest','icon-192.png','icon-512.png','apple-touch-icon.png','privacy.html','terms.html'];
 
 self.addEventListener('install',function(e){
